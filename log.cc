@@ -110,23 +110,17 @@ void cerr_logger::executed(prod &query)
 
 void cerr_logger::error(prod &query, const dut::failure &e)
 {
-  (void)query;
-  istringstream err(e.what());
-  string line;
-
-  if (columns-1 == (queries%columns)) {
-    cerr << endl;
-  }
-  getline(err, line);
-  errors[line]++;
   if (dynamic_cast<const dut::timeout *>(&e))
-    cerr << "t";
+    cout << "Timeout";
   else if (dynamic_cast<const dut::syntax *>(&e))
-    cerr << "S";
+    cout << "Syntax";
   else if (dynamic_cast<const dut::broken *>(&e))
-    cerr << "C";
+    cout << "Broken";
   else
-    cerr << "e";
+    cout << "Error";
+  ostringstream s;
+  s << query;
+  cout << ": " << e.what() << "\nQuery: \n" << s.str() << endl;
 }
 
 pqxx_logger::pqxx_logger(std::string target, std::string conninfo, struct schema &s)

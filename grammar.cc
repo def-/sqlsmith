@@ -20,10 +20,10 @@ shared_ptr<table_ref> table_ref::factory(prod *p) {
       if (d6() > 3)
 	return make_shared<joined_table>(p);
     }
-    if (d6() > 3)
+    //if (d6() > 3)
       return make_shared<table_or_query_name>(p);
-    else
-      return make_shared<table_sample>(p);
+    //else
+    //  return make_shared<table_sample>(p);
   } catch (runtime_error &e) {
     p->retry();
   }
@@ -269,14 +269,14 @@ struct for_update_verify : prod_visitor {
       if (actual_table->name.find("pg_"))
 	throw("catalog");
     }
-    table_sample* sample = dynamic_cast<table_sample*>(p);
-    if (sample) {
-      table *actual_table = dynamic_cast<table*>(sample->t);
-      if (actual_table && !actual_table->is_insertable)
-	throw("read only");
-      if (actual_table->name.find("pg_"))
-	throw("catalog");
-    }
+    //table_sample* sample = dynamic_cast<table_sample*>(p);
+    //if (sample) {
+    //  table *actual_table = dynamic_cast<table*>(sample->t);
+    //  if (actual_table && !actual_table->is_insertable)
+	//throw("read only");
+    //  if (actual_table->name.find("pg_"))
+	//throw("catalog");
+    //}
   } ;
 };
 

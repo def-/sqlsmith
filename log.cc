@@ -2,6 +2,7 @@
 #include <iostream>
 #include <pqxx/pqxx>
 #include <sstream>
+#include <time.h>
 
 #ifndef HAVE_BOOST_REGEX
 #include <regex>
@@ -120,7 +121,8 @@ void cerr_logger::error(prod &query, const dut::failure &e)
     cout << "Error";
   ostringstream s;
   s << query;
-  cout << ": " << e.what() << "\nQuery: \n" << s.str() << endl;
+  time_t t = time(NULL);
+  cout << ": " << e.what() << "\n" << ctime(&t) << "\nQuery: \n" << s.str() << endl;
 }
 
 pqxx_logger::pqxx_logger(std::string target, std::string conninfo, struct schema &s)

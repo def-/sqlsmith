@@ -113,7 +113,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   cerr << "Loading types...";
 
   r = w.exec("select quote_ident(typname), oid, typdelim, typrelid, typelem, typarray, typtype "
-	     "from pg_type ");
+         "from pg_type ");
   
   for (auto row = r.begin(); row != r.end(); ++row) {
     string name(row[0].as<string>());
@@ -124,9 +124,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     OID typarray(row[5].as<OID>());
     string typtype(row[6].as<string>());
     //       if (schema == "pg_catalog")
-    // 	continue;
+    //  continue;
     //       if (schema == "information_schema")
-    // 	continue;
+    //  continue;
 
     pg_type *t = new pg_type(name,oid,typdelim[0],typrelid, typelem, typarray, typtype[0]);
     oid2type[oid] = t;
@@ -144,37 +144,57 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   cerr << "Loading tables...";
   r = w.exec("select table_name, "
-		    "table_schema, "
-	            "is_insertable_into, "
-	            "table_type "
-	     "from information_schema.tables");
-	     
+            "table_schema, "
+                "is_insertable_into, "
+                "table_type "
+         "from information_schema.tables");
+
   for (auto row = r.begin(); row != r.end(); ++row) {
     string schema(row[1].as<string>());
     string insertable(row[2].as<string>());
     string table_type(row[3].as<string>());
 
-	if (no_catalog && ((schema == "pg_catalog") || (schema == "information_schema")))
-		continue;
+    if (no_catalog && ((schema == "pg_catalog") || (schema == "information_schema")))
+        continue;
       
     tables.push_back(table(row[0].as<string>(),
-			   schema,
-			   ((insertable == "YES") ? true : false),
-			   ((table_type == "BASE TABLE") ? true : false)));
+               schema,
+               ((insertable == "YES") ? true : false),
+               ((table_type == "BASE TABLE") ? true : false)));
   }
-	     
+         
+  r = w.exec("select matviewname, "
+            "schemaname, "
+                "'NO', "
+                "'VIEW' "
+         "from pg_matviews");
+         
+  for (auto row = r.begin(); row != r.end(); ++row) {
+    string schema(row[1].as<string>());
+    string insertable(row[2].as<string>());
+    string table_type(row[3].as<string>());
+
+    if (no_catalog && ((schema == "pg_catalog") || (schema == "information_schema")))
+        continue;
+      
+    tables.push_back(table(row[0].as<string>(),
+               schema,
+               ((insertable == "YES") ? true : false),
+               ((table_type == "BASE TABLE") ? true : false)));
+  }
+         
   cerr << "done." << endl;
 
   cerr << "Loading columns and constraints...";
 
   for (auto t = tables.begin(); t != tables.end(); ++t) {
     string q("select attname, "
-	     "atttypid "
-	     "from pg_attribute join pg_class c on( c.oid = attrelid ) "
-	     "join pg_namespace n on n.oid = relnamespace "
-	     "where not attisdropped "
-	     "and attname not in "
-	     "('xmin', 'xmax', 'ctid', 'cmin', 'cmax', 'tableoid', 'oid') ");
+         "atttypid "
+         "from pg_attribute join pg_class c on( c.oid = attrelid ) "
+         "join pg_namespace n on n.oid = relnamespace "
+         "where not attisdropped "
+         "and attname not in "
+         "('xmin', 'xmax', 'ctid', 'cmin', 'cmax', 'tableoid', 'oid') ");
     q += " and relname = " + w.quote(t->name);
     q += " and nspname = " + w.quote(t->schema);
 
@@ -200,14 +220,14 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   cerr << "Loading operators...";
 
   r = w.exec("select oprname, oprleft,"
-		    "oprright, oprresult "
-		    "from pg_catalog.pg_operator "
+            "oprright, oprresult "
+            "from pg_catalog.pg_operator "
                     "where 0 not in (oprresult, oprright, oprleft) ");
   for (auto row : r) {
     op o(row[0].as<string>(),
-	 oid2type[row[1].as<OID>()],
-	 oid2type[row[2].as<OID>()],
-	 oid2type[row[3].as<OID>()]);
+     oid2type[row[1].as<OID>()],
+     oid2type[row[2].as<OID>()],
+     oid2type[row[3].as<OID>()]);
     register_operator(o);
   }
 
@@ -215,18 +235,18 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   cerr << "Loading routines...";
   r = w.exec("select (select nspname from pg_namespace where oid = pronamespace), oid, prorettype, proname "
-	     "from pg_proc "
-	     "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
-	     "and proname <> 'pg_event_trigger_table_rewrite_reason' "
-	     "and proname <> 'pg_event_trigger_table_rewrite_oid' "
-	     "and proname !~ '^ri_fkey_' "
-	     "and not (proretset or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
+         "from pg_proc "
+         "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
+         "and proname <> 'pg_event_trigger_table_rewrite_reason' "
+         "and proname <> 'pg_event_trigger_table_rewrite_oid' "
+         "and proname !~ '^ri_fkey_' "
+         "and not (proretset or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
   for (auto row : r) {
     routine proc(row[0].as<string>(),
-		 row[1].as<string>(),
-		 oid2type[row[2].as<long>()],
-		 row[3].as<string>());
+         row[1].as<string>(),
+         oid2type[row[2].as<long>()],
+         row[3].as<string>());
     register_routine(proc);
   }
 
@@ -236,7 +256,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   for (auto &proc : routines) {
     string q("select unnest(proargtypes) "
-	     "from pg_proc ");
+         "from pg_proc ");
     q += " where oid = " + w.quote(proc.specific_name);
       
     r = w.exec(q);
@@ -250,20 +270,20 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   cerr << "Loading aggregates...";
   r = w.exec("select (select nspname from pg_namespace where oid = pronamespace), oid, prorettype, proname "
-	     "from pg_proc "
-	     "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
-	     "and proname not in ('pg_event_trigger_table_rewrite_reason') "
-	     "and proname not in ('percentile_cont', 'dense_rank', 'cume_dist', "
-	     "'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
-	     "and proname !~ '^ri_fkey_' "
-	     "and not (proretset or " + procedure_is_window + ") "
-	     "and " + procedure_is_aggregate);
+         "from pg_proc "
+         "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
+         "and proname not in ('pg_event_trigger_table_rewrite_reason') "
+         "and proname not in ('percentile_cont', 'dense_rank', 'cume_dist', "
+         "'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
+         "and proname !~ '^ri_fkey_' "
+         "and not (proretset or " + procedure_is_window + ") "
+         "and " + procedure_is_aggregate);
 
   for (auto row : r) {
     routine proc(row[0].as<string>(),
-		 row[1].as<string>(),
-		 oid2type[row[2].as<OID>()],
-		 row[3].as<string>());
+         row[1].as<string>(),
+         oid2type[row[2].as<OID>()],
+         row[3].as<string>());
     register_aggregate(proc);
   }
 
@@ -273,7 +293,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   for (auto &proc : aggregates) {
     string q("select unnest(proargtypes) "
-	     "from pg_proc ");
+         "from pg_proc ");
     q += " where oid = " + w.quote(proc.specific_name);
       
     r = w.exec(q);
@@ -305,14 +325,14 @@ void dut_libpq_notice_rx(void *arg, const PGresult *res)
 void dut_libpq::connect(std::string &conninfo)
 {
     if (conn) {
-	PQfinish(conn);
+    PQfinish(conn);
     }
     conn = PQconnectdb(conninfo.c_str());
     if (PQstatus(conn) != CONNECTION_OK)
     {
-	char *errmsg = PQerrorMessage(conn);
-	if (strlen(errmsg))
-	    throw dut::broken(errmsg, "08001");
+    char *errmsg = PQerrorMessage(conn);
+    if (strlen(errmsg))
+        throw dut::broken(errmsg, "08001");
     }
 
     command("set statement_timeout to '1s'");
@@ -331,7 +351,7 @@ dut_libpq::dut_libpq(std::string conninfo)
 void dut_libpq::command(const std::string &stmt)
 {
     if (!conn)
-	connect(conninfo_);
+    connect(conninfo_);
     PGresult *res = PQexec(conn, stmt.c_str());
 
     switch (PQresultStatus(res)) {
@@ -339,35 +359,35 @@ void dut_libpq::command(const std::string &stmt)
     case PGRES_FATAL_ERROR:
     default:
     {
-	const char *errmsg = PQresultErrorMessage(res);
-	if (!errmsg || !strlen(errmsg))
-	     errmsg = PQerrorMessage(conn);
+    const char *errmsg = PQresultErrorMessage(res);
+    if (!errmsg || !strlen(errmsg))
+         errmsg = PQerrorMessage(conn);
 
-	const char *sqlstate = PQresultErrorField(res, PG_DIAG_SQLSTATE);
-	if (!sqlstate || !strlen(sqlstate))
-	     sqlstate =  (CONNECTION_OK != PQstatus(conn)) ? "08000" : "?????";
-	
-	std::string error_string(errmsg);
-	std::string sqlstate_string(sqlstate);
-	PQclear(res);
+    const char *sqlstate = PQresultErrorField(res, PG_DIAG_SQLSTATE);
+    if (!sqlstate || !strlen(sqlstate))
+         sqlstate =  (CONNECTION_OK != PQstatus(conn)) ? "08000" : "?????";
+    
+    std::string error_string(errmsg);
+    std::string sqlstate_string(sqlstate);
+    PQclear(res);
 
-	if (CONNECTION_OK != PQstatus(conn)) {
+    if (CONNECTION_OK != PQstatus(conn)) {
             PQfinish(conn);
-	    conn = 0;
-	    throw dut::broken(error_string.c_str(), sqlstate_string.c_str());
-	}
-	if (sqlstate_string == "42601")
-	     throw dut::syntax(error_string.c_str(), sqlstate_string.c_str());
-	else
-	     throw dut::failure(error_string.c_str(), sqlstate_string.c_str());
+        conn = 0;
+        throw dut::broken(error_string.c_str(), sqlstate_string.c_str());
+    }
+    if (sqlstate_string == "42601")
+         throw dut::syntax(error_string.c_str(), sqlstate_string.c_str());
+    else
+         throw dut::failure(error_string.c_str(), sqlstate_string.c_str());
     }
 
     case PGRES_NONFATAL_ERROR:
     case PGRES_TUPLES_OK:
     case PGRES_SINGLE_TUPLE:
     case PGRES_COMMAND_OK:
-	PQclear(res);
-	return;
+    PQclear(res);
+    return;
     }
 }
 

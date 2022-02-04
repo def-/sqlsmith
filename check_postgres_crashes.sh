@@ -5,6 +5,6 @@ sed -e "s/.*(PID \([0-9]*\)).*/\1/" ~/sig | while read i; do
   echo "CHECKING $i" && \
   gzip -d ~/var/data/pg_data/core.$i.gz && \
   gdb $HOME/code/yugabyte-db/build/release-clang12-linuxbrew-dynamic-ninja/postgres/bin/postgres \
-    $HOME/var/data/pg_data/core.$i -batch && \
-  gzip -1 $HOME/var/data/pg_data/core.$i
+    $HOME/var/data/pg_data/core.$i -batch
+  gzip -9 $HOME/var/data/pg_data/core.$i &
 done

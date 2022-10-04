@@ -63,7 +63,7 @@ bool pg_type::consistent(sqltype *rvalue)
 dut_pqxx::dut_pqxx(std::string conninfo)
   : c(conninfo)
 {
-     c.set_variable("statement_timeout", "'1s'");
+     c.set_variable("statement_timeout", "'120s'");
      c.set_variable("client_min_messages", "'ERROR'");
      c.set_variable("application_name", "'" PACKAGE "::dut'");
 }
@@ -78,7 +78,8 @@ void dut_pqxx::test(const std::string &stmt)
 
     pqxx::work w(c);
     w.exec(stmt.c_str());
-    w.abort();
+    //w.abort();
+    w.commit();
   } catch (const pqxx::failure &e) {
     if ((dynamic_cast<const pqxx::broken_connection *>(&e))) {
       /* re-throw to outer loop to recover session. */
@@ -396,5 +397,6 @@ void dut_libpq::test(const std::string &stmt)
     command("ROLLBACK;");
     command("BEGIN;");
     command(stmt.c_str());
-    command("ROLLBACK;");
+    //command("ROLLBACK;");
+    command("COMMIT;");
 }

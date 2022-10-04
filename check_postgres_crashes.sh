@@ -8,3 +8,5 @@ sed -e "s/.*(PID \([0-9]*\)).*/\1/" ~/sig | while read i; do
     $HOME/var/data/pg_data/core.$i -batch
   gzip -9 $HOME/var/data/pg_data/core.$i &
 done
+
+# for i in ~/var/data/pg_data/core*; do echo $i; gdb $HOME/code/yugabyte-db/build/release-clang12-linuxbrew-dynamic-ninja/postgres/bin/postgres $i -ex bt -batch; done > ~/code/sqlsmith/postgres_crashes

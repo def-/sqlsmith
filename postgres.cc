@@ -32,6 +32,7 @@ bool pg_type::consistent(sqltype *rvalue)
   case 'r': /* range */
   case 'm': /* multirange */
   case 'e': /* enum */
+  case 'l': /* MZ: list */
     return this == t;
     
   case 'p': /* pseudo type: accept any concrete matching type */
@@ -114,9 +115,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   cerr << "Loading types...";
 
-  r = w.exec("select case typnamespace when 'pg_catalog'::regnamespace then quote_ident(typname) "
-	     "else format('%I.%I', typnamespace::regnamespace, typname) end, "
-	     "oid, typdelim, typrelid, typelem, typarray, typtype "
+  // Loading types...ERROR:  unknown catalog item 'regnamespace'
+  r = w.exec("select typname, "
+	     "oid, ',' as typdelim, typrelid, typelem, typarray, typtype "
 	     "from pg_type ");
   
   for (auto row = r.begin(); row != r.end(); ++row) {
@@ -149,7 +150,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   cerr << "Loading tables...";
   r = w.exec("select table_name, "
 		    "table_schema, "
-	            "is_insertable_into, "
+	            "true, " //"is_insertable_into, " # column "is_insertable_into" does not exist
 	            "table_type "
 	     "from information_schema.tables");
 	     
@@ -203,36 +204,40 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   cerr << "Loading operators...";
 
-  r = w.exec("select oprname, oprleft,"
-		    "oprright, oprresult "
-		    "from pg_catalog.pg_operator "
-                    "where 0 not in (oprresult, oprright, oprleft) ");
-  for (auto row : r) {
-    op o(row[0].as<string>(),
-	 oid2type[row[1].as<OID>()],
-	 oid2type[row[2].as<OID>()],
-	 oid2type[row[3].as<OID>()]);
-    register_operator(o);
-  }
+  // Loading operators...ERROR:  unknown catalog item 'pg_catalog.pg_operator'
+  // TODO: Add operators
+  //r = w.exec("select oprname, oprleft,"
+	//	    "oprright, oprresult "
+	//	    "from pg_catalog.pg_operator "
+  //                  "where 0 not in (oprresult, oprright, oprleft) ");
+  //for (auto row : r) {
+  //  op o(row[0].as<string>(),
+	// oid2type[row[1].as<OID>()],
+	// oid2type[row[2].as<OID>()],
+	// oid2type[row[3].as<OID>()]);
+  //  register_operator(o);
+  //}
 
   cerr << "done." << endl;
 
   cerr << "Loading routines...";
-  r = w.exec("select (select nspname from pg_namespace where oid = pronamespace), oid, prorettype, proname "
-	     "from pg_proc "
-	     "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
-	     "and proname <> 'pg_event_trigger_table_rewrite_reason' "
-	     "and proname <> 'pg_event_trigger_table_rewrite_oid' "
-	     "and proname !~ '^ri_fkey_' "
-	     "and not (proretset or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
+  // Loading routines...ERROR:  WHERE clause error: column "prorettype" does not exist
+  // TODO: Add routines
+  //r = w.exec("select (select nspname from pg_namespace where oid = pronamespace), oid, prorettype, proname "
+	//     "from pg_proc "
+	//     "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
+	//     "and proname <> 'pg_event_trigger_table_rewrite_reason' "
+	//     "and proname <> 'pg_event_trigger_table_rewrite_oid' "
+	//     "and proname !~ '^ri_fkey_' "
+	//     "and not (proretset or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
-  for (auto row : r) {
-    routine proc(row[0].as<string>(),
-		 row[1].as<string>(),
-		 oid2type[row[2].as<long>()],
-		 row[3].as<string>());
-    register_routine(proc);
-  }
+  //for (auto row : r) {
+  //  routine proc(row[0].as<string>(),
+	//	 row[1].as<string>(),
+	//	 oid2type[row[2].as<long>()],
+	//	 row[3].as<string>());
+  //  register_routine(proc);
+  //}
 
   cerr << "done." << endl;
 
@@ -253,23 +258,25 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   cerr << "done." << endl;
 
   cerr << "Loading aggregates...";
-  r = w.exec("select (select nspname from pg_namespace where oid = pronamespace), oid, prorettype, proname "
-	     "from pg_proc "
-	     "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
-	     "and proname not in ('pg_event_trigger_table_rewrite_reason') "
-	     "and proname not in ('percentile_cont', 'dense_rank', 'cume_dist', "
-	     "'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
-	     "and proname !~ '^ri_fkey_' "
-	     "and not (proretset or " + procedure_is_window + ") "
-	     "and " + procedure_is_aggregate);
+  // Loading aggregates...ERROR:  WHERE clause error: column "prorettype" does not exist
+  // TODO: Add aggregates
+  //r = w.exec("select (select nspname from pg_namespace where oid = pronamespace), oid, prorettype, proname "
+	//     "from pg_proc "
+	//     "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
+	//     "and proname not in ('pg_event_trigger_table_rewrite_reason') "
+	//     "and proname not in ('percentile_cont', 'dense_rank', 'cume_dist', "
+	//     "'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
+	//     "and proname !~ '^ri_fkey_' "
+	//     "and not (proretset or " + procedure_is_window + ") "
+	//     "and " + procedure_is_aggregate);
 
-  for (auto row : r) {
-    routine proc(row[0].as<string>(),
-		 row[1].as<string>(),
-		 oid2type[row[2].as<OID>()],
-		 row[3].as<string>());
-    register_aggregate(proc);
-  }
+  //for (auto row : r) {
+  //  routine proc(row[0].as<string>(),
+	//	 row[1].as<string>(),
+	//	 oid2type[row[2].as<OID>()],
+	//	 row[3].as<string>());
+  //  register_aggregate(proc);
+  //}
 
   cerr << "done." << endl;
 

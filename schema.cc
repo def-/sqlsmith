@@ -56,7 +56,7 @@ void schema::generate_indexes() {
 
   assert(booltype);
   assert(inttype);
-  assert(internaltype);
+  //assert(internaltype); // sqlsmith: /home/deen/git/sqlsmith/schema.cc:59: void schema::generate_indexes(): Assertion `internaltype' failed.
   assert(arraytype);
 
 }

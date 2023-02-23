@@ -17,13 +17,17 @@ shared_ptr<table_ref> table_ref::factory(prod *p) {
     if (p->level < 3 + d6()) {
       if (d6() > 3 && p->level < d6())
 	return make_shared<table_subquery>(p);
-      if (d6() > 3)
+      if (d6() > 3 && g_joins >= 0)
+      {
+	g_joins--;
 	return make_shared<joined_table>(p);
+      }
     }
-    if (d6() > 3)
-      return make_shared<table_or_query_name>(p);
-    else
-      return make_shared<table_sample>(p);
+    //if (d6() > 3)
+    return make_shared<table_or_query_name>(p);
+    // Syntax: ERROR:  Expected joined table, found dot
+    //else
+    //  return make_shared<table_sample>(p);
   } catch (runtime_error &e) {
     p->retry();
   }
@@ -156,13 +160,14 @@ joined_table::joined_table(prod *p) : table_ref(p) {
 
   condition = join_cond::factory(this, *lhs, *rhs);
 
-  if (d6()<4) {
-    type = "inner";
-  } else if (d6()<4) {
-    type = "left";
-  } else {
-    type = "right";
-  }
+  // Syntax: ERROR:  Expected ON, or USING after JOIN, found INNER
+  //if (d6()<4) {
+  //  type = "inner";
+  //} else if (d6()<4) {
+  //  type = "left";
+  //} else {
+  //  type = "right";
+  //}
 
   for (auto ref: lhs->refs)
     refs.push_back(ref);
@@ -269,14 +274,15 @@ struct for_update_verify : prod_visitor {
       if (actual_table->name.find("pg_"))
 	throw("catalog");
     }
-    table_sample* sample = dynamic_cast<table_sample*>(p);
-    if (sample) {
-      table *actual_table = dynamic_cast<table*>(sample->t);
-      if (actual_table && !actual_table->is_insertable)
-	throw("read only");
-      if (actual_table->name.find("pg_"))
-	throw("catalog");
-    }
+    // Syntax: ERROR:  Expected joined table, found dot
+    //table_sample* sample = dynamic_cast<table_sample*>(p);
+    //if (sample) {
+    //  table *actual_table = dynamic_cast<table*>(sample->t);
+    //  if (actual_table && !actual_table->is_insertable)
+    //    throw("read only");
+    //  if (actual_table->name.find("pg_"))
+    //    throw("catalog");
+    //}
   } ;
 };
 
@@ -466,17 +472,21 @@ upsert_stmt::upsert_stmt(prod *p, struct scope *s, table *v)
 shared_ptr<prod> statement_factory(struct scope *s)
 {
   try {
+    g_joins = 2;
     s->new_stmt();
-    if (d42() == 1)
-      return make_shared<merge_stmt>((struct prod *)0, s);
+    // Syntax: ERROR:  Unexpected keyword MERGE at the beginning of a statement
+    //if (d42() == 1)
+    //  return make_shared<merge_stmt>((struct prod *)0, s);
     if (d42() == 1)
       return make_shared<insert_stmt>((struct prod *)0, s);
+    // Syntax: ERROR:  Expected end of statement, found RETURNING
+    //else if (d42() == 1)
+    //  return make_shared<delete_returning>((struct prod *)0, s);
     else if (d42() == 1)
-      return make_shared<delete_returning>((struct prod *)0, s);
-    else if (d42() == 1) {
       return make_shared<upsert_stmt>((struct prod *)0, s);
-    } else if (d42() == 1)
-      return make_shared<update_returning>((struct prod *)0, s);
+    // Syntax: ERROR:  Expected end of statement, found RETURNING
+    //else if (d42() == 1)
+    //  return make_shared<update_returning>((struct prod *)0, s);
     else if (d6() > 4)
       return make_shared<select_for_update>((struct prod *)0, s);
     else if (d6() > 5)

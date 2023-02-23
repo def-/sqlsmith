@@ -14,7 +14,7 @@
 
 using std::shared_ptr;
 
-static int g_joins = 2;
+static int g_joins = 1;
 
 struct table_ref : prod {
   vector<shared_ptr<named_relation> > refs;

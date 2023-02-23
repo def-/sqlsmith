@@ -47,6 +47,8 @@ target_table::target_table(prod *p, table *victim) : table_ref(p)
 {
   while (! victim
 	 || victim->schema == "pg_catalog"
+	 || victim->schema == "mz_catalog"
+	 || victim->schema == "mz_internal"
 	 || !victim->is_base_table
 	 || !victim->columns().size()) {
     struct named_relation *pick = random_pick(scope->tables);
@@ -350,6 +352,8 @@ void modifying_stmt::pick_victim()
       retry();
     } while (! victim
 	   || victim->schema == "pg_catalog"
+	   || victim->schema == "mz_catalog"
+	   || victim->schema == "mz_internal"
 	   || !victim->is_base_table
 	   || !victim->columns().size());
 }

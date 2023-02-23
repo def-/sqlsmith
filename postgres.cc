@@ -130,6 +130,10 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     string typtype(row[6].as<string>());
     //       if (schema == "pg_catalog")
     // 	continue;
+    //       if (schema == "mz_catalog")
+    // 	continue;
+    //       if (schema == "mz_internal")
+    // 	continue;
     //       if (schema == "information_schema")
     // 	continue;
 
@@ -159,7 +163,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     string insertable(row[2].as<string>());
     string table_type(row[3].as<string>());
 
-	if (no_catalog && ((schema == "pg_catalog") || (schema == "information_schema")))
+	if (no_catalog && ((schema == "pg_catalog") || (schema == "mz_catalog") || (schema == "mz_internal") || (schema == "information_schema")))
 		continue;
       
     tables.push_back(table(row[0].as<string>(),
@@ -179,7 +183,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     string insertable(row[2].as<string>());
     string table_type(row[3].as<string>());
 
-    if (no_catalog && ((schema == "pg_catalog") || (schema == "information_schema")))
+    if (no_catalog && ((schema == "pg_catalog") || (schema == "mz_catalog") || (schema == "mz_internal") || (schema == "information_schema")))
         continue;
 
     tables.push_back(table(row[0].as<string>(),

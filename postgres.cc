@@ -228,19 +228,17 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   cerr << "Loading operators...";
 
-  // Loading operators...ERROR:  unknown catalog item 'pg_catalog.pg_operator'
-  // TODO: Add operators
-  //r = w.exec("select oprname, oprleft,"
-	//	    "oprright, oprresult "
-	//	    "from pg_catalog.pg_operator "
-  //                  "where 0 not in (oprresult, oprright, oprleft) ");
-  //for (auto row : r) {
-  //  op o(row[0].as<string>(),
-	// oid2type[row[1].as<OID>()],
-	// oid2type[row[2].as<OID>()],
-	// oid2type[row[3].as<OID>()]);
-  //  register_operator(o);
-  //}
+  r = w.exec("select oprname, oprleft,"
+		    "oprright, oprresult "
+		    "from pg_catalog.pg_operator "
+                    "where 0 not in (oprresult, oprright, oprleft) ");
+  for (auto row : r) {
+    op o(row[0].as<string>(),
+	 oid2type[row[1].as<OID>()],
+	 oid2type[row[2].as<OID>()],
+	 oid2type[row[3].as<OID>()]);
+    register_operator(o);
+  }
 
   cerr << "done." << endl;
 

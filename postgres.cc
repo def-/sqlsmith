@@ -136,6 +136,8 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     // 	continue;
     //       if (schema == "information_schema")
     // 	continue;
+    if (name == "map")
+      name = "map[text=>text]";
 
     pg_type *t = new pg_type(name,oid,typdelim[0],typrelid, typelem, typarray, typtype[0]);
     oid2type[oid] = t;

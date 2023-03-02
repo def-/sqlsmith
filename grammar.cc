@@ -477,7 +477,7 @@ upsert_stmt::upsert_stmt(prod *p, struct scope *s, table *v)
 shared_ptr<prod> statement_factory(struct scope *s)
 {
   try {
-    g_joins = 3;
+    g_joins = 1;
     s->new_stmt();
     // TODO: Only selects for now
     return make_shared<select_for_update>((struct prod *)0, s);

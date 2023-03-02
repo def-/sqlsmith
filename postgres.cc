@@ -80,6 +80,7 @@ void dut_pqxx::test(const std::string &stmt)
 #endif
 
     pqxx::work w(c);
+    w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
     w.exec(stmt.c_str());
     w.abort();
   } catch (const pqxx::failure &e) {
@@ -103,6 +104,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   c.set_variable("application_name", "'" PACKAGE "::schema'");
 
   pqxx::work w(c);
+  w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
   pqxx::result r = w.exec("select version()");
   version = r[0][0].as<string>();
 

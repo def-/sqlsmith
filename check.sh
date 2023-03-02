@@ -17,6 +17,6 @@ grep -v "invalid selection: operation may only refer to user-defined tables" | #
 grep -v "cannot reference pseudo type pg_catalog.list" | # https://github.com/MaterializeInc/materialize/issues/17870
 grep -v 'operator is not unique: "char" = character' | # https://github.com/MaterializeInc/materialize/issues/17871
 grep -v "Invalid data in source, saw retractions" | # https://github.com/MaterializeInc/materialize/issues/17874
-grep -v "internal error: unimplemented join" | # https://github.com/MaterializeInc/materialize/issues/17897
+#grep -v "internal error: unimplemented join" | # https://github.com/MaterializeInc/materialize/issues/17897
 grep -v "Evaluation error: internal error: invalid input type" | # https://github.com/MaterializeInc/materialize/issues/17807
 sort | uniq -c | sort -n

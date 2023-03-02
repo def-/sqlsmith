@@ -79,17 +79,17 @@ column_reference::column_reference(prod *p, sqltype *type_constraint) : value_ex
   if (type_constraint) {
     auto pairs = scope->refs_of_type(type_constraint);
     auto picked = random_pick(pairs);
-    reference += picked.first->ident()
-      + "." + picked.second.name;
+    reference += scope->schema->quote_name(picked.first->ident())
+      + "." + scope->schema->quote_name(picked.second.name);
     type = picked.second.type;
     assert(type_constraint->consistent(type));
   } else {
     named_relation *r = random_pick(scope->refs);
 
-    reference += r->ident() + ".";
+    reference += scope->schema->quote_name(r->ident()) + ".";
     column &c = random_pick(r->columns());
     type = c.type;
-    reference += c.name;
+    reference += scope->schema->quote_name(c.name);
   }
 }
 
@@ -322,9 +322,9 @@ void atomic_subselect::out(std::ostream &out)
   out << "(select ";
 
   if (agg)
-    out << agg->ident() << "(" << col->name << ")";
+    out << agg->ident() << "(" << scope->schema->quote_name(col->name) << ")";
   else
-    out << col->name;
+    out << scope->schema->quote_name(col->name);
   
   out << " from " << tab->ident();
 

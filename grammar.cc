@@ -17,7 +17,8 @@ shared_ptr<table_ref> table_ref::factory(prod *p) {
     if (p->level < 3 + d6()) {
       if (d6() > 3 && p->level < d6())
 	return make_shared<table_subquery>(p);
-      if (d6() > 3 && g_joins >= 0)
+      // ERROR:  Expected ON, or USING after JOIN, found JOIN
+      if (d6() > 3 && g_joins > 0)
       {
 	g_joins--;
 	return make_shared<joined_table>(p);
@@ -128,7 +129,7 @@ retry:
   for (auto c2 : right_rel->columns()) {
     if (c1.type == c2.type) {
       condition +=
-	left_rel->ident() + "." + c1.name + " = " + right_rel->ident() + "." + c2.name + " ";
+	scope->schema->quote_name(left_rel->ident()) + "." + scope->schema->quote_name(c1.name) + " = " + scope->schema->quote_name(right_rel->ident()) + "." + scope->schema->quote_name(c2.name) + " ";
       break;
     }
   }
@@ -476,7 +477,7 @@ upsert_stmt::upsert_stmt(prod *p, struct scope *s, table *v)
 shared_ptr<prod> statement_factory(struct scope *s)
 {
   try {
-    g_joins = 2;
+    g_joins = 1;
     s->new_stmt();
     // Syntax: ERROR:  Unexpected keyword MERGE at the beginning of a statement
     //if (d42() == 1)

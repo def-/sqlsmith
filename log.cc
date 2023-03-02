@@ -119,6 +119,7 @@ void cerr_logger::error(prod &query, const dut::failure &e)
     cout << "Broken";
   else
     cout << "Error";
+  cout << " " << e.sqlstate;
   ostringstream s;
   s << query;
   time_t t = time(NULL);

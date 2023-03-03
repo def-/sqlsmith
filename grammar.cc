@@ -479,26 +479,24 @@ shared_ptr<prod> statement_factory(struct scope *s)
   try {
     g_joins = 1;
     s->new_stmt();
-    // TODO: Only selects for now
-    return make_shared<select_for_update>((struct prod *)0, s);
-    //// Syntax: ERROR:  Unexpected keyword MERGE at the beginning of a statement
-    ////if (d42() == 1)
-    ////  return make_shared<merge_stmt>((struct prod *)0, s);
+    // Syntax: ERROR:  Unexpected keyword MERGE at the beginning of a statement
     //if (d42() == 1)
-    //  return make_shared<insert_stmt>((struct prod *)0, s);
-    //// Syntax: ERROR:  Expected end of statement, found RETURNING
-    ////else if (d42() == 1)
-    ////  return make_shared<delete_returning>((struct prod *)0, s);
+    //  return make_shared<merge_stmt>((struct prod *)0, s);
+    if (d42() == 1)
+      return make_shared<insert_stmt>((struct prod *)0, s);
+    // Syntax: ERROR:  Expected end of statement, found RETURNING
     //else if (d42() == 1)
-    //  return make_shared<upsert_stmt>((struct prod *)0, s);
-    //// Syntax: ERROR:  Expected end of statement, found RETURNING
-    ////else if (d42() == 1)
-    ////  return make_shared<update_returning>((struct prod *)0, s);
-    //else if (d6() > 4)
-    //  return make_shared<select_for_update>((struct prod *)0, s);
-    //else if (d6() > 5)
-    //  return make_shared<common_table_expression>((struct prod *)0, s);
-    //return make_shared<query_spec>((struct prod *)0, s);
+    //  return make_shared<delete_returning>((struct prod *)0, s);
+    else if (d42() == 1)
+      return make_shared<upsert_stmt>((struct prod *)0, s);
+    // Syntax: ERROR:  Expected end of statement, found RETURNING
+    //else if (d42() == 1)
+    //  return make_shared<update_returning>((struct prod *)0, s);
+    else if (d6() > 4)
+      return make_shared<select_for_update>((struct prod *)0, s);
+    else if (d6() > 5)
+      return make_shared<common_table_expression>((struct prod *)0, s);
+    return make_shared<query_spec>((struct prod *)0, s);
   } catch (runtime_error &e) {
     return statement_factory(s);
   }

@@ -80,7 +80,8 @@ void dut_pqxx::test(const std::string &stmt)
 #endif
 
     pqxx::work w(c);
-    w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
+    // Doesn't help with hanging queries, hang pretty often
+    //w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
     w.exec(stmt.c_str());
     w.abort();
   } catch (const pqxx::failure &e) {

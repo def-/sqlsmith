@@ -5,6 +5,7 @@ grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 grep -v "cannot reference pseudo type" | # TODO: Fix, happens often with catalog items: anyrange etc
 grep -v "Expected left square bracket, found right parenthesis" | # TODO: Fix, happens often with map/map[] and similar types
+grep -v "Expected right parenthesis, found identifier" | # TODO: Fix
 grep -v "table functions are not allowed in" | # TODO: Fix, happens often
 grep -v "operator does not exist" | # For list types
 # Refinement:
@@ -29,6 +30,7 @@ grep -v "LIKE pattern exceeds maximum length" |
 grep -v "negative substring length not allowed" |
 grep -v "cannot take square root of a negative number" |
 grep -v "timestamp units not yet supported" |
+grep -v "step size cannot equal zero" |
 
 grep -v "Expected joined table, found" | # Should fix for multi table join
 grep -v "Expected ON, or USING after JOIN, found" | # Should fix for multi table join

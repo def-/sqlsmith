@@ -474,10 +474,10 @@ upsert_stmt::upsert_stmt(prod *p, struct scope *s, table *v)
   constraint = random_pick(victim->constraints);
 }
 
-shared_ptr<prod> statement_factory(struct scope *s)
+shared_ptr<prod> statement_factory(struct scope *s, long max_joins)
 {
   try {
-    g_joins = 1;
+    g_joins = max_joins;
     s->new_stmt();
     // Syntax: ERROR:  Unexpected keyword MERGE at the beginning of a statement
     //if (d42() == 1)

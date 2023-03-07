@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   cerr << PACKAGE_NAME " " GITREV << endl;
 
   map<string,string> options;
-  regex optregex("--(help|log-to|verbose|target|sqlite|monetdb|version|dump-all-graphs|dump-all-queries|seed|dry-run|max-queries|rng-state|exclude-catalog)(?:=((?:.|\n)*))?");
+  regex optregex("--(help|log-to|verbose|target|sqlite|monetdb|version|dump-all-graphs|dump-all-queries|seed|dry-run|max-queries|rng-state|exclude-catalog|max-joins)(?:=((?:.|\n)*))?");
   
   for(char **opt = argv+1 ;opt < argv+argc; opt++) {
     smatch match;
@@ -91,7 +91,8 @@ int main(int argc, char *argv[])
       "    --dry-run            print queries instead of executing them" << endl <<
       "    --exclude-catalog    don't generate queries using catalog relations" << endl <<
       "    --max-queries=long   terminate after generating this many queries" << endl <<
-      "    --rng-state=string    deserialize dumped rng state" << endl <<
+      "    --max-joins=long     max number of joins (1 by default)" << endl <<
+      "    --rng-state=string   deserialize dumped rng state" << endl <<
       "    --verbose            emit progress output" << endl <<
       "    --version            print version information and exit" << endl <<
       "    --help               print available command line options and exit" << endl;
@@ -156,7 +157,10 @@ int main(int argc, char *argv[])
 
       if (options.count("dry-run")) {
 	while (1) {
-	  shared_ptr<prod> gen = statement_factory(&scope);
+    long max_joins = 1;
+	  if (options.count("max-joins"))
+	      max_joins = stol(options["max-joins"]);
+	  shared_ptr<prod> gen = statement_factory(&scope, max_joins);
 	  gen->out(cout);
 	  for (auto l : loggers)
 	    l->generated(*gen);

@@ -312,7 +312,7 @@ struct update_returning : update_stmt {
   }
 };
 
-shared_ptr<prod> statement_factory(struct scope *s);
+shared_ptr<prod> statement_factory(struct scope *s, long max_joins=1);
 
 struct common_table_expression : prod {
   vector<shared_ptr<prod> > with_queries;

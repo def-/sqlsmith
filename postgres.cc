@@ -275,7 +275,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name !~ '^ri_fkey_' "
     "AND mz_functions.name <> 'mz_panic' " // don't want crashes
     "AND mz_functions.name <> 'mz_logical_timestamp' " // mz_logical_timestamp() has been renamed to mz_now()
-    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> 'mz_sleep' " // https://github.com/MaterializeInc/materialize/issues/17984
     "AND mz_functions.name <> '' " // 
     "AND mz_functions.name <> '' " // 
     "AND mz_functions.name <> '' " // 

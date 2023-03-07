@@ -1,6 +1,7 @@
 #include "postgres.hh"
 #include "config.h"
 #include <iostream>
+#include <sstream>
 
 #ifndef HAVE_BOOST_REGEX
 #include <regex>
@@ -105,20 +106,18 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   c.set_variable("application_name", "'" PACKAGE "::schema'");
 
   pqxx::work w(c);
-  w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
+  //w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
   pqxx::result r = w.exec("select version()");
   version = r[0][0].as<string>();
 
   r = w.exec("SHOW server_version_num");
   version_num = r[0][0].as<int>();
 
-  // address the schema change in postgresql 11 that replaced proisagg and proiswindow with prokind
-  string procedure_is_aggregate = version_num < 110000 ? "proisagg" : "prokind = 'a'";
-  string procedure_is_window = version_num < 110000 ? "proiswindow" : "prokind = 'w'";
+  string procedure_is_aggregate = "mz_functions.name in ('array_agg', 'avg', 'bit_and', 'bit_or', 'bit_xor', 'bool_and', 'bool_or', 'count', 'every', 'json_agg', 'jsonb_agg', 'json_object_agg', 'jsonb_object_agg', 'max', 'min', 'range_agg', 'range_intersect_agg', 'string_agg', 'sum', 'xmlagg', 'corr', 'covar_pop', 'covar_samp', 'regr_avgx', 'regr_avgy', 'regr_count', 'regr_intercept', 'regr_r2', 'regr_slope', 'regr_sxx', 'regr_sxy', 'stddev', 'stddev_pop', 'stddev_samp', 'variance', 'var_pop', 'var_samp', 'mode', 'percentile_cont', 'percentile_disc', 'rank', 'dense_rank', 'percent_rank', 'grouping')";
+  string procedure_is_window = "mz_functions.name in ('row_number', 'rank', 'dense_rank', 'percent_rank', 'cume_dist', 'ntile', 'lag', 'lead', 'first_value', 'last_value', 'nth_value')";
 
   cerr << "Loading types...";
 
-  // Loading types...ERROR:  unknown catalog item 'regnamespace'
   r = w.exec("select typname, "
 	     "oid, ',' as typdelim, typrelid, typelem, typarray, typtype "
 	     "from pg_type ");
@@ -139,8 +138,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     // 	continue;
     //       if (schema == "information_schema")
     // 	continue;
-    if (name == "map")
-      name = "map[text=>text]";
+    // Not sure if this is better or worse:
+    //if (name == "map")
+    //  name = "map[text=>text]";
 
     pg_type *t = new pg_type(name,oid,typdelim[0],typrelid, typelem, typarray, typtype[0]);
     oid2type[oid] = t;
@@ -161,8 +161,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 		    "table_schema, "
 	            "true, " //"is_insertable_into, " # column "is_insertable_into" does not exist
 	            "table_type "
-	     "from information_schema.tables");
-	     
+	     "from information_schema.tables "
+       "where table_name <> 'pg_class' " // https://github.com/MaterializeInc/materialize/issues/17978
+       );
   for (auto row = r.begin(); row != r.end(); ++row) {
     string schema(row[1].as<string>());
     string insertable(row[2].as<string>());
@@ -233,94 +234,153 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   cerr << "Loading operators...";
 
-  // Loading operators...ERROR:  unknown catalog item 'pg_catalog.pg_operator'
-  // TODO: Add operators
-  //r = w.exec("select oprname, oprleft,"
-	//	    "oprright, oprresult "
-	//	    "from pg_catalog.pg_operator "
-  //                  "where 0 not in (oprresult, oprright, oprleft) ");
-  //for (auto row : r) {
-  //  op o(row[0].as<string>(),
-	// oid2type[row[1].as<OID>()],
-	// oid2type[row[2].as<OID>()],
-	// oid2type[row[3].as<OID>()]);
-  //  register_operator(o);
-  //}
+  r = w.exec("SELECT "
+    "mz_operators.name AS oprname, "
+    "left_type.oid as oprleft, "
+    "right_type.oid as oprright, "
+    "ret_type.oid AS oprresult "
+    "FROM mz_catalog.mz_operators "
+    "JOIN mz_catalog.mz_types AS ret_type "
+    "ON mz_operators.return_type_id = ret_type.id "
+    "JOIN mz_catalog.mz_types AS left_type "
+    "ON mz_operators.argument_type_ids[1] = left_type.id "
+    "JOIN mz_catalog.mz_types AS right_type "
+    "ON mz_operators.argument_type_ids[2] = right_type.id "
+    "WHERE array_length(mz_operators.argument_type_ids, 1) = 2");
+
+  for (auto row : r) {
+    op o(row[0].as<string>(),
+	 oid2type[row[1].as<OID>()],
+	 oid2type[row[2].as<OID>()],
+	 oid2type[row[3].as<OID>()]);
+    register_operator(o);
+  }
 
   cerr << "done." << endl;
 
   cerr << "Loading routines...";
-  // Loading routines...ERROR:  WHERE clause error: column "prorettype" does not exist
-  // TODO: Add routines
-  //r = w.exec("select (select nspname from pg_namespace where oid = pronamespace), oid, prorettype, proname "
-	//     "from pg_proc "
-	//     "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
-	//     "and proname <> 'pg_event_trigger_table_rewrite_reason' "
-	//     "and proname <> 'pg_event_trigger_table_rewrite_oid' "
-	//     "and proname !~ '^ri_fkey_' "
-	//     "and not (proretset or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
+  r = w.exec(
+    "SELECT "
+    "  mz_schemas.name AS nspname, "
+    "  mz_functions.oid, "
+    "  ret_type.oid AS prorettype, "
+    "  mz_functions.name AS proname "
+    "FROM mz_catalog.mz_functions "
+    "JOIN mz_catalog.mz_schemas "
+    "ON mz_functions.schema_id = mz_schemas.id "
+    "JOIN mz_catalog.mz_types AS ret_type "
+    "ON mz_functions.return_type_id = ret_type.id "
+    "WHERE mz_functions.name <> 'pg_event_trigger_table_rewrite_reason' "
+    "AND mz_functions.name <> 'pg_event_trigger_table_rewrite_oid' "
+    "AND mz_functions.name !~ '^ri_fkey_' "
+    "AND mz_functions.name <> 'mz_panic' " // don't want crashes
+    "AND mz_functions.name <> 'mz_logical_timestamp' " // mz_logical_timestamp() has been renamed to mz_now()
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> '' " // 
+    "AND NOT (returns_set or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
-  //for (auto row : r) {
-  //  routine proc(row[0].as<string>(),
-	//	 row[1].as<string>(),
-	//	 oid2type[row[2].as<long>()],
-	//	 row[3].as<string>());
-  //  register_routine(proc);
-  //}
+  for (auto row : r) {
+    routine proc(row[0].as<string>(),
+		 row[1].as<string>(),
+		 oid2type[row[2].as<long>()],
+		 row[3].as<string>());
+    register_routine(proc);
+  }
 
   cerr << "done." << endl;
 
   cerr << "Loading routine parameters...";
 
   for (auto &proc : routines) {
-    string q("select unnest(proargtypes) "
-	     "from pg_proc ");
-    q += " where oid = " + w.quote(proc.specific_name);
-      
+    // unnest is broken: https://github.com/MaterializeInc/materialize/issues/17979
+    //string q("select (select oid from mz_types where a = id) from mz_functions, lateral unnest(argument_type_ids) as a where oid = ");
+    string q("select array_to_string(argument_type_ids, ',') from mz_functions where oid = ");
+    q += w.quote(proc.specific_name);
+
     r = w.exec(q);
+    string previous;
+    OID oid;
     for (auto row : r) {
-      sqltype *t = oid2type[row[0].as<OID>()];
-      assert(t);
-      proc.argtypes.push_back(t);
+      string s = row[0].as<string>();
+      string segment;
+      std::stringstream test(s);
+      while (std::getline(test, segment, ',')) {
+        if (segment != previous) {
+          string q("select oid from mz_types where id = ");
+          q += w.quote(segment);
+          pqxx::result r2 = w.exec(q);
+          previous = segment;
+          oid = r2[0][0].as<OID>();
+        }
+        sqltype *t = oid2type[oid];
+        assert(t);
+        proc.argtypes.push_back(t);
+      }
     }
   }
   cerr << "done." << endl;
 
   cerr << "Loading aggregates...";
   // Loading aggregates...ERROR:  WHERE clause error: column "prorettype" does not exist
-  // TODO: Add aggregates
-  //r = w.exec("select (select nspname from pg_namespace where oid = pronamespace), oid, prorettype, proname "
-	//     "from pg_proc "
-	//     "where prorettype::regtype::text not in ('event_trigger', 'trigger', 'opaque', 'internal') "
-	//     "and proname not in ('pg_event_trigger_table_rewrite_reason') "
-	//     "and proname not in ('percentile_cont', 'dense_rank', 'cume_dist', "
-	//     "'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
-	//     "and proname !~ '^ri_fkey_' "
-	//     "and not (proretset or " + procedure_is_window + ") "
-	//     "and " + procedure_is_aggregate);
-
-  //for (auto row : r) {
-  //  routine proc(row[0].as<string>(),
-	//	 row[1].as<string>(),
-	//	 oid2type[row[2].as<OID>()],
-	//	 row[3].as<string>());
-  //  register_aggregate(proc);
-  //}
+  r = w.exec("SELECT "
+    "  mz_schemas.name AS nspname, "
+    "  mz_functions.oid, "
+    "  ret_type.oid AS prorettype, "
+    "  mz_functions.name AS proname "
+    "FROM mz_catalog.mz_functions "
+    "JOIN mz_catalog.mz_schemas "
+    "ON mz_functions.schema_id = mz_schemas.id "
+    "JOIN mz_catalog.mz_types AS ret_type "
+    "ON mz_functions.return_type_id = ret_type.id "
+    "WHERE mz_functions.name not in ('pg_event_trigger_table_rewrite_reason', 'percentile_cont', 'dense_rank', 'cume_dist', 'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
+    "AND mz_functions.name !~ '^ri_fkey_' "
+    "AND " + procedure_is_aggregate + " AND NOT returns_set AND NOT " + procedure_is_window);
+  for (auto row : r) {
+    routine proc(row[0].as<string>(),
+		 row[1].as<string>(),
+		 oid2type[row[2].as<OID>()],
+		 row[3].as<string>());
+    register_aggregate(proc);
+  }
 
   cerr << "done." << endl;
 
   cerr << "Loading aggregate parameters...";
 
   for (auto &proc : aggregates) {
-    string q("select unnest(proargtypes) "
-	     "from pg_proc ");
-    q += " where oid = " + w.quote(proc.specific_name);
-      
+    // unnest is broken: https://github.com/MaterializeInc/materialize/issues/17979
+    //string q("select (select oid from mz_types where a = id) from mz_functions, lateral unnest(argument_type_ids) as a where oid = ");
+    string q("select array_to_string(argument_type_ids, ',') from mz_functions where oid = ");
+    q += w.quote(proc.specific_name);
+
     r = w.exec(q);
+    string previous;
+    OID oid;
     for (auto row : r) {
-      sqltype *t = oid2type[row[0].as<OID>()];
-      assert(t);
-      proc.argtypes.push_back(t);
+      string s = row[0].as<string>();
+      string segment;
+      std::stringstream test(s);
+      while (std::getline(test, segment, ',')) {
+        if (segment != previous) {
+          string q("select oid from mz_types where id = ");
+          q += w.quote(segment);
+          pqxx::result r2 = w.exec(q);
+          previous = segment;
+          oid = r2[0][0].as<OID>();
+        }
+        sqltype *t = oid2type[oid];
+        assert(t);
+        proc.argtypes.push_back(t);
+      }
     }
   }
   cerr << "done." << endl;

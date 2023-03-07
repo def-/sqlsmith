@@ -246,7 +246,16 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "ON mz_operators.argument_type_ids[1] = left_type.id "
     "JOIN mz_catalog.mz_types AS right_type "
     "ON mz_operators.argument_type_ids[2] = right_type.id "
-    "WHERE array_length(mz_operators.argument_type_ids, 1) = 2");
+    "WHERE array_length(mz_operators.argument_type_ids, 1) = 2"
+    "UNION SELECT "
+    "mz_operators.name AS oprname, "
+    "0 as oprleft, "
+    "right_type.oid as oprright, "
+    "ret_type.oid AS oprresult "
+    "FROM mz_catalog.mz_operators "
+    "JOIN mz_catalog.mz_types AS ret_type ON mz_operators.return_type_id = ret_type.id "
+    "JOIN mz_catalog.mz_types AS right_type ON mz_operators.argument_type_ids[1] = right_type.id "
+    "WHERE array_length(mz_operators.argument_type_ids, 1) = 1");
 
   for (auto row : r) {
     op o(row[0].as<string>(),

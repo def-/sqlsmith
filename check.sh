@@ -24,6 +24,9 @@ grep -v "internal error: unrecognized configuration parameter" |
 grep -v "invalid encoding name" |
 grep -v "invalid time zone" |
 grep -v "value out of range: overflow" |
+grep -v "LIKE pattern exceeds maximum length" |
+grep -v "negative substring length not allowed" |
+grep -v "cannot take square root of a negative number" |
 
 grep -v "Expected joined table, found" | # Should fix for multi table join
 grep -v "Expected ON, or USING after JOIN, found" | # Should fix for multi table join

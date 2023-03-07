@@ -43,6 +43,7 @@ jobs:
       run: |
         make -C build
 
-    - name: test
-      run: |
-        pg_virtualenv build/sqlsmith --max-queries=100 --verbose
+    # Doesn't run against Postgres anymore, requires mz_catalog
+    #- name: test
+    #  run: |
+    #    pg_virtualenv build/sqlsmith --max-queries=100 --verbose

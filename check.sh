@@ -5,6 +5,7 @@ grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 grep -v "cannot reference pseudo type" | # TODO: Fix, happens often with catalog items: anyrange etc
 grep -v "Expected left square bracket, found right parenthesis" | # TODO: Fix, happens often with map/map[] and similar types
+grep -v "operator does not exist" | # For list types
 # Refinement:
 grep -v "array_agg on arrays not yet supported" |
 grep -v "binary date_bin is unsupported" |
@@ -20,6 +21,9 @@ grep -v "is defined for numbers greater than or equal to" |
 grep -v "is not defined for zero" |
 grep -v "requested character too large for encoding" |
 grep -v "internal error: unrecognized configuration parameter" |
+grep -v "invalid encoding name" |
+grep -v "invalid time zone" |
+grep -v "value out of range: overflow" |
 
 grep -v "Expected joined table, found" | # Should fix for multi table join
 grep -v "Expected ON, or USING after JOIN, found" | # Should fix for multi table join

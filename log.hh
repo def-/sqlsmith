@@ -41,6 +41,7 @@ struct stats_collecting_logger : logger {
 struct cerr_logger : stats_collecting_logger {
   const int columns = 80;
   std::map<std::string, long> errors;
+  cerr_logger();
   virtual void report();
   virtual void generated(prod &query);
   virtual void executed(prod &query);

@@ -67,6 +67,11 @@ void stats_collecting_logger::generated(prod &query)
   sum_retries += v.retries;
 }
 
+cerr_logger::cerr_logger()
+{
+  std::cerr << "seed: " << smith::rng << std::endl;
+}
+
 void cerr_logger::report()
 {
     cerr << endl << "queries: " << queries << endl;

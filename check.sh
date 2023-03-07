@@ -17,6 +17,9 @@ grep -v "invalid escape string" |
 grep -v "invalid hash algorithm" |
 grep -v "nested aggregate functions are not allowed" |
 grep -v "is defined for numbers greater than or equal to" |
+grep -v "is not defined for zero" |
+grep -v "requested character too large for encoding" |
+grep -v "internal error: unrecognized configuration parameter" |
 
 grep -v "Expected joined table, found" | # Should fix for multi table join
 grep -v "Expected ON, or USING after JOIN, found" | # Should fix for multi table join
@@ -37,4 +40,5 @@ grep -v 'operator is not unique: character = "char"' | # https://github.com/Mate
 grep -v "Invalid data in source, saw retractions" | # https://github.com/MaterializeInc/materialize/issues/17874
 #grep -v "internal error: unimplemented join" | # https://github.com/MaterializeInc/materialize/issues/17897
 grep -v "Evaluation error: internal error: invalid input type" | # https://github.com/MaterializeInc/materialize/issues/17807
+grep -v "' not recognized" | # https://github.com/MaterializeInc/materialize/issues/17981
 sort | uniq -c | sort -n

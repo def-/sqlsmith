@@ -69,7 +69,9 @@ void stats_collecting_logger::generated(prod &query)
 
 cerr_logger::cerr_logger()
 {
-  std::cerr << "seed: " << smith::rng << std::endl;
+  ostringstream seed;
+  seed << smith::rng;
+  cout << "seed: " << seed.str() << endl;
 }
 
 void cerr_logger::report()
@@ -128,7 +130,7 @@ void cerr_logger::error(prod &query, const dut::failure &e)
   ostringstream s;
   s << query;
   time_t t = time(NULL);
-  cout << ": " << e.what() << "\n" << asctime(gmtime(&t)) << "\nQuery: \n" << s.str() << endl;
+  cout << ": " << e.what() << "\n" << asctime(gmtime(&t)) << "\nQuery: \n" << s.str() << ";" << endl;
 }
 
 pqxx_logger::pqxx_logger(std::string target, std::string conninfo, struct schema &s)

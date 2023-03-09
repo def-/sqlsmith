@@ -49,11 +49,14 @@ extern "C" {
 /* make the cerr logger globally accessible so we can emit one last
    report on SIGINT */
 cerr_logger *global_cerr_logger;
+json_logger *global_json_logger;
 
-extern "C" void cerr_log_handler(int)
+extern "C" void log_handler(int)
 {
   if (global_cerr_logger)
     global_cerr_logger->report();
+  if (global_json_logger)
+    global_json_logger->report();
   exit(1);
 }
 
@@ -62,7 +65,7 @@ int main(int argc, char *argv[])
   cerr << PACKAGE_NAME " " GITREV << endl;
 
   map<string,string> options;
-  regex optregex("--(help|log-to|verbose|target|sqlite|monetdb|version|dump-all-graphs|dump-all-queries|seed|dry-run|max-queries|rng-state|exclude-catalog|max-joins)(?:=((?:.|\n)*))?");
+  regex optregex("--(help|log-to|verbose|target|sqlite|monetdb|version|dump-all-graphs|dump-all-queries|seed|dry-run|max-queries|rng-state|exclude-catalog|max-joins|log-json)(?:=((?:.|\n)*))?");
   
   for(char **opt = argv+1 ;opt < argv+argc; opt++) {
     smatch match;
@@ -85,6 +88,7 @@ int main(int argc, char *argv[])
       "    --monetdb=connstr    MonetDB database to send queries to" <<endl <<
 #endif
       "    --log-to=connstr     log errors to postgres database" << endl <<
+      "    --log-json           write out json result of run" << endl <<
       "    --seed=int           seed RNG with specified int instead of PID" << endl <<
       "    --dump-all-queries   print queries as they are generated" << endl <<
       "    --dump-all-graphs    dump generated ASTs" << endl <<
@@ -146,9 +150,16 @@ int main(int argc, char *argv[])
 	auto l = make_shared<cerr_logger>();
 	global_cerr_logger = &*l;
 	loggers.push_back(l);
-	signal(SIGINT, cerr_log_handler);
+	signal(SIGINT, log_handler);
       }
-      
+
+      if (options.count("log-json")) {
+	auto l = make_shared<json_logger>();
+	global_json_logger = &*l;
+	loggers.push_back(l);
+	signal(SIGINT, log_handler);
+      }
+
       if (options.count("dump-all-graphs"))
 	loggers.push_back(make_shared<ast_logger>());
 
@@ -203,6 +214,8 @@ int main(int argc, char *argv[])
 		&& (++queries_generated > stol(options["max-queries"]))) {
 	      if (global_cerr_logger)
 		global_cerr_logger->report();
+	      if (global_json_logger)
+		global_json_logger->report();
 	      return 0;
 	    }
 	    

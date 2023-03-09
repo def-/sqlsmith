@@ -7,9 +7,12 @@
 #include <exception>
 #include <pqxx/pqxx>
 #include <string>
+#include <nlohmann/json.hpp>
 
 #include "prod.hh"
 #include "dut.hh"
+
+using json = nlohmann::json;
 
 /// logger base class
 struct logger {
@@ -42,6 +45,17 @@ struct cerr_logger : stats_collecting_logger {
   const int columns = 80;
   std::map<std::string, long> errors;
   cerr_logger();
+  virtual void report();
+  virtual void generated(prod &query);
+  virtual void executed(prod &query);
+  virtual void error(prod &query, const dut::failure &e);
+  void report(prod &p);
+};
+
+/// json logger
+struct json_logger : stats_collecting_logger {
+  json data;
+  json_logger();
   virtual void report();
   virtual void generated(prod &query);
   virtual void executed(prod &query);

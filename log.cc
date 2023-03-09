@@ -133,6 +133,53 @@ void cerr_logger::error(prod &query, const dut::failure &e)
   cout << ": " << e.what() << "\n" << asctime(gmtime(&t)) << "\nQuery: \n" << s.str() << ";" << endl;
 }
 
+json_logger::json_logger()
+: data()
+{
+  data["version"] = GITREV;
+
+  ostringstream seed;
+  seed << smith::rng;
+  data["seed"] = stoi(seed.str());
+  data["queries"] = 0;
+  data["errors"] = json::array();
+}
+
+void json_logger::report()
+{
+  std::cout << data.dump(4) << std::endl;
+}
+
+
+void json_logger::generated(prod &p)
+{
+}
+
+void json_logger::executed(prod &query)
+{
+  data["queries"] = data["queries"].get<int>() + 1;
+}
+
+void json_logger::error(prod &query, const dut::failure &e)
+{
+  json obj;
+  if (dynamic_cast<const dut::timeout *>(&e))
+    obj["type"] = "Timeout";
+  else if (dynamic_cast<const dut::syntax *>(&e))
+    obj["type"] = "Syntax";
+  else if (dynamic_cast<const dut::broken *>(&e))
+    obj["type"] = "Broken";
+  else
+    obj["type"] = "Error";
+  obj["sqlstate"] = e.sqlstate;
+  obj["timestamp"] = time(NULL);
+  obj["message"] = e.what();
+  ostringstream s;
+  s << query;
+  obj["query"] = s.str() + ";";
+  data["errors"].push_back(obj);
+}
+
 pqxx_logger::pqxx_logger(std::string target, std::string conninfo, struct schema &s)
 {
   c = make_shared<pqxx::connection>(conninfo);

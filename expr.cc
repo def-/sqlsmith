@@ -105,10 +105,11 @@ shared_ptr<bool_expr> bool_expr::factory(prod *p)
 	    return make_shared<bool_term>(p);
        else if (d6() < 4)
 	    return make_shared<null_predicate>(p);
-       else if (d6() < 4)
-	    return make_shared<truth_value>(p);
-       else
+       else if (d6() < 4 && g_joins > 0) {
+	    g_joins--;
 	    return make_shared<exists_predicate>(p);
+       } else
+	    return make_shared<truth_value>(p);
 //     return make_shared<distinct_pred>(q);
   } catch (runtime_error &e) {
   }

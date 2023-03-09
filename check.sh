@@ -10,6 +10,7 @@ grep -v "division by zero" |
 grep -v "operator does not exist" | # For list types
 grep -v "operator is not unique" | # Because of https://github.com/MaterializeInc/materialize/issues/17870
 # Refinement:
+grep -v "more than one record produced in subquery" |
 grep -v "invalid range bound flags" |
 grep -v "argument list must have even number of elements" |
 grep -v "array_agg on arrays not yet supported" |

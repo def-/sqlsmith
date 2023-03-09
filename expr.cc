@@ -20,9 +20,9 @@ shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint)
     // ERROR:  aggregate window functions not yet supported
     //if (1 == d20() && p->level < d6() && window_function::allowed(p))
     //  return make_shared<window_function>(p, type_constraint);
-    if (1 == d42() && p->level < d6() && (!type_constraint || type_constraint->name.rfind("map", 0) != 0))
+    if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("range", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
       return make_shared<coalesce>(p, type_constraint);
-    else if (1 == d42() && p->level < d6())
+    else if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("range", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
       return make_shared<nullif>(p, type_constraint);
     else if (p->level < d6() && d6() == 1)
       return make_shared<funcall>(p, type_constraint);
@@ -205,6 +205,23 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
   // Error: ERROR:  column "default" does not exist
   //else if (dynamic_cast<insert_stmt*>(p) && (d6() > 3))
   //  expr += "default";
+  // https://github.com/MaterializeInc/materialize/issues/17870
+  else if (type->name == "anycompatible")
+    expr = "null";
+  else if (type->name == "anyarray")
+    expr = "array[null, null]";
+  else if (type->name == "list")
+    expr = "list[null, null]";
+  else if (type->name == "anyrange")
+    expr = "numrange(0,0)";
+  else if (type->name == "anycompatiblerange")
+    expr = "numrange(0,0)";
+  else if (type->name == "record")
+    expr = "row(1)";
+  else if (type->name == "map")
+    expr = "'{}'::map[text=>text]";
+  else if (type->name == "anycompatiblemap")
+    expr = "'{}'::map[text=>text]";
   else
     expr += "cast(null as " + type->name + ")";
 }
@@ -267,7 +284,11 @@ void funcall::out(std::ostream &out)
   out << proc->ident() << "(";
   for (auto expr = parms.begin(); expr != parms.end(); expr++) {
     indent(out);
-    out << "cast(" << **expr << " as " << (*expr)->type->name << ")";
+    // https://github.com/MaterializeInc/materialize/issues/17870
+    if ((*expr)->type->name.rfind("list", 0) != 0 && (*expr)->type->name.rfind("map", 0) != 0 && (*expr)->type->name.rfind("record", 0) != 0 && (*expr)->type->name.rfind("range", 0) != 0 && (*expr)->type->name.rfind("any", 0) != 0)
+      out << "CAST(" << **expr << " as " << (*expr)->type->name << ")";
+    else
+      out << **expr;
     if (expr+1 != parms.end())
       out << ",";
   }

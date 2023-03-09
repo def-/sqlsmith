@@ -3,12 +3,12 @@ cat $* |
 grep -E "^(Broken|Syntax|Error) " |
 grep -v "violates not-null constraint" |
 grep -v "division by zero" |
-grep -v "cannot reference pseudo type" | # TODO: Fix, happens often with catalog items: anyrange etc
-grep -v "Expected left square bracket, found right parenthesis" | # TODO: Fix, happens often with map/map[] and similar types
-grep -v "Expected right parenthesis, found identifier" | # TODO: Fix
+#grep -v "Expected left square bracket, found right parenthesis" | # TODO: Fix, happens often with map/map[] and similar types
+#grep -v "Expected right parenthesis, found identifier" | # TODO: Fix
 grep -v "table functions are not allowed in" | # TODO: Fix, happens often
 grep -v "operator does not exist" | # For list types
 # Refinement:
+grep -v "argument list must have even number of elements" |
 grep -v "array_agg on arrays not yet supported" |
 grep -v "binary date_bin is unsupported" |
 grep -v "sum(interval) not yet supported" |
@@ -38,6 +38,7 @@ grep -v "unterminated escape sequence in LIKE" |
 grep -v "null character not permitted" |
 grep -v "is defined for numbers between" |
 grep -v "field position must be greater than zero" |
+grep -v "must appear in the GROUP BY clause or be used in an aggregate function" |
 
 grep -v "Expected joined table, found" | # Should fix for multi table join
 grep -v "Expected ON, or USING after JOIN, found" | # Should fix for multi table join
@@ -52,7 +53,7 @@ grep -v "coalesce could not convert type \"char\"" | # https://github.com/Materi
 grep -v "operator is not unique: character" | # https://github.com/MaterializeInc/materialize/issues/17899
 grep -v "operator is not unique: \"char\"" | # https://github.com/MaterializeInc/materialize/issues/17899
 grep -v "invalid selection: operation may only refer to user-defined tables" | # Seems expected
-grep -v "cannot reference pseudo type pg_catalog.list" | # https://github.com/MaterializeInc/materialize/issues/17870
+#grep -v "cannot reference pseudo type" | # https://github.com/MaterializeInc/materialize/issues/17870
 grep -v 'operator is not unique: "char" = character' | # https://github.com/MaterializeInc/materialize/issues/17871
 grep -v 'operator is not unique: character = "char"' | # https://github.com/MaterializeInc/materialize/issues/17871
 grep -v "Invalid data in source, saw retractions" | # https://github.com/MaterializeInc/materialize/issues/17874

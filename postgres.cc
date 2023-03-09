@@ -43,7 +43,7 @@ bool pg_type::consistent(sqltype *rvalue)
       return t->typelem_ == InvalidOid;
     } else if(name == "anyenum") {
       return t->typtype_ == 'e';
-    } else if (name == "\"any\"" || name == "anycompatible") { /* as quoted by quote_ident() */
+    } else if (name == "any" || name == "\"any\"" || name == "anycompatible") { /* as quoted by quote_ident() */
       return t->typtype_ != 'p'; /* any non-pseudo type */
     } else if (name == "anyelement") {
       return t->typelem_ == InvalidOid;
@@ -55,6 +55,8 @@ bool pg_type::consistent(sqltype *rvalue)
       return t->typtype_ == 'c';
     } else if (name == "cstring") {
       return this == t;
+    } else if (name == "map" || name == "anycompatiblemap") {
+      return t->name.rfind("map", 0) == 0;
     } else {
       return false;
     }

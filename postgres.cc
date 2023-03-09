@@ -77,11 +77,6 @@ dut_pqxx::dut_pqxx(std::string conninfo)
 void dut_pqxx::test(const std::string &stmt)
 {
   try {
-#ifndef HAVE_LIBPQXX7
-    if(!c.is_open())
-       c.activate();
-#endif
-
     pqxx::work w(c);
     // Doesn't help with hanging queries, hang pretty often
     //w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
@@ -397,11 +392,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     }
   }
   cerr << "done." << endl;
-#ifdef HAVE_LIBPQXX7
-  c.close();
-#else
   c.disconnect();
-#endif
   generate_indexes();
 }
 

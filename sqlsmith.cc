@@ -151,6 +151,7 @@ int main(int argc, char *argv[])
 	global_cerr_logger = &*l;
 	loggers.push_back(l);
 	signal(SIGINT, log_handler);
+	signal(SIGTERM, log_handler);
       }
 
       if (options.count("log-json")) {
@@ -158,6 +159,7 @@ int main(int argc, char *argv[])
 	global_json_logger = &*l;
 	loggers.push_back(l);
 	signal(SIGINT, log_handler);
+	signal(SIGTERM, log_handler);
       }
 
       if (options.count("dump-all-graphs"))

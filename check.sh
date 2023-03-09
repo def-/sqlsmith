@@ -63,4 +63,5 @@ grep -v "Invalid data in source, saw retractions" | # https://github.com/Materia
 grep -v "Evaluation error: internal error: invalid input type" | # https://github.com/MaterializeInc/materialize/issues/17807
 grep -v "' not recognized" | # https://github.com/MaterializeInc/materialize/issues/17981
 grep -v "internal error: Invalid data in source, saw negative accumulation for key" | # https://github.com/MaterializeInc/materialize/issues/17509
+grep -v "internal transform error: scalar types do not match" | # https://github.com/MaterializeInc/materialize/issues/18023
 sort | uniq -c | sort -n

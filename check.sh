@@ -7,11 +7,14 @@ grep -v "division by zero" |
 #grep -v "Expected right parenthesis, found identifier" | # TODO: Fix
 grep -v "table functions are not allowed in" | # TODO: Fix, happens often
 grep -v "operator does not exist" | # For list types
+grep -v "operator is not unique" | # Because of https://github.com/MaterializeInc/materialize/issues/17870
 # Refinement:
 grep -v "argument list must have even number of elements" |
 grep -v "array_agg on arrays not yet supported" |
 grep -v "binary date_bin is unsupported" |
 grep -v "sum(interval) not yet supported" |
+grep -v "concat_agg not yet supported" |
+grep -v "list_length_max is unsupported" |
 grep -v "invalid input syntax for type jsonb" |
 grep -v "invalid regular expression" |
 grep -v "aggregate functions are not allowed in" |

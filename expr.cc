@@ -206,6 +206,8 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
   //else if (dynamic_cast<insert_stmt*>(p) && (d6() > 3))
   //  expr += "default";
   // https://github.com/MaterializeInc/materialize/issues/17870
+  else if (type->name == "any")
+    expr = "null";
   else if (type->name == "anycompatible")
     expr = "null";
   else if (type->name == "anyarray")

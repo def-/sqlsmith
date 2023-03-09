@@ -248,7 +248,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "ON mz_operators.argument_type_ids[1] = left_type.id "
     "JOIN mz_catalog.mz_types AS right_type "
     "ON mz_operators.argument_type_ids[2] = right_type.id "
-    "WHERE array_length(mz_operators.argument_type_ids, 1) = 2"
+    "WHERE array_length(mz_operators.argument_type_ids, 1) = 2 "
+    "AND mz_operators.name <> '@>' " // https://github.com/MaterializeInc/materialize/issues/18017
+    "AND mz_operators.name <> '<@' " // https://github.com/MaterializeInc/materialize/issues/18017
     "UNION SELECT "
     "mz_operators.name AS oprname, "
     "0 as oprleft, "
@@ -287,16 +289,16 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name <> 'mz_panic' " // don't want crashes
     "AND mz_functions.name <> 'mz_logical_timestamp' " // mz_logical_timestamp() has been renamed to mz_now()
     "AND mz_functions.name <> 'mz_sleep' " // https://github.com/MaterializeInc/materialize/issues/17984
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
-    "AND mz_functions.name <> '' " // 
+    "AND mz_functions.name <> 'date_bin' " // binary date_bin is unsupported
+    "AND mz_functions.name <> 'list_length_max' " // list_length_max is unsupported
+    "AND mz_functions.name <> 'list_n_layers' " // list_n_layers is unsupported
+    "AND mz_functions.name <> 'concat_agg' " // concat_agg not yet supported
+    "AND mz_functions.name <> 'generate_series' " // https://github.com/MaterializeInc/materialize/issues/18020
+    "AND mz_functions.name <> 'jsonb_array_elements' " // https://github.com/MaterializeInc/materialize/issues/18020
+    "AND mz_functions.name <> 'jsonb_array_elements_text' " // https://github.com/MaterializeInc/materialize/issues/18020
+    "AND mz_functions.name <> 'jsonb_each' " // https://github.com/MaterializeInc/materialize/issues/18020
+    "AND mz_functions.name <> 'jsonb_each_text' " // https://github.com/MaterializeInc/materialize/issues/18020
+    "AND mz_functions.name <> 'jsonb_object_keys' " // https://github.com/MaterializeInc/materialize/issues/18020
     "AND NOT (returns_set or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
   for (auto row : r) {

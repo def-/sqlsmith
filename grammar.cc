@@ -211,8 +211,9 @@ from_clause::from_clause(prod *p) : prod(p) {
   for (auto r : reflist.back()->refs)
     scope->refs.push_back(&*r);
 
-  while (d6() > 5) {
+  while (d6() > 5 && g_joins > 0) {
     // add a lateral subquery
+    g_joins--;
     if (!impedance::matched(typeid(lateral_subquery)))
       break;
     reflist.push_back(make_shared<lateral_subquery>(this));

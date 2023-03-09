@@ -125,12 +125,6 @@ int main(int argc, char *argv[])
 #endif
       }
       else
-	schema = make_shared<schema_pqxx>(options["target"], options.count("exclude-catalog"));
-
-      scope scope;
-      long queries_generated = 0;
-      schema->fill_scope(scope);
-
       if (options.count("rng-state")) {
 	   istringstream(options["rng-state"]) >> smith::rng;
       } else {
@@ -140,11 +134,6 @@ int main(int argc, char *argv[])
       vector<shared_ptr<logger> > loggers;
 
       loggers.push_back(make_shared<impedance_feedback>());
-
-      if (options.count("log-to"))
-	loggers.push_back(make_shared<pqxx_logger>(
-	     options.count("sqlite") ? options["sqlite"] : options["target"],
-	     options["log-to"], *schema));
 
       if (options.count("verbose")) {
 	auto l = make_shared<cerr_logger>();
@@ -167,6 +156,17 @@ int main(int argc, char *argv[])
 
       if (options.count("dump-all-queries"))
 	loggers.push_back(make_shared<query_dumper>());
+
+      schema = make_shared<schema_pqxx>(options["target"], options.count("exclude-catalog"));
+
+      if (options.count("log-to"))
+	loggers.push_back(make_shared<pqxx_logger>(
+	     options.count("sqlite") ? options["sqlite"] : options["target"],
+	     options["log-to"], *schema));
+
+      scope scope;
+      long queries_generated = 0;
+      schema->fill_scope(scope);
 
       if (options.count("dry-run")) {
 	while (1) {

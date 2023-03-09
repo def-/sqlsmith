@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 cat $* |
 grep -E "^(Broken|Syntax|Error) " |
+# Expected AFTER a crash, the query before this is interesting, not the ones after
+grep -v "Broken 08000: no connection to the server" |
+grep -v "failed: Connection refused" |
+
 grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 #grep -v "Expected left square bracket, found right parenthesis" | # TODO: Fix, happens often with map/map[] and similar types
@@ -15,6 +19,8 @@ grep -v "binary date_bin is unsupported" |
 grep -v "sum(interval) not yet supported" |
 grep -v "concat_agg not yet supported" |
 grep -v "list_length_max is unsupported" |
+grep -v "list_n_layers is unsupported" |
+grep -v "mz_row_size requires a record type" |
 grep -v "invalid input syntax for type jsonb" |
 grep -v "invalid regular expression" |
 grep -v "aggregate functions are not allowed in" |

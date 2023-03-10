@@ -205,7 +205,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 	     "from pg_attribute join pg_class c on( c.oid = attrelid ) "
 	     "join pg_namespace n on n.oid = relnamespace "
 	     "where not attisdropped "
-	     "and not (pg_namespace.nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema) and atttypid = 18) " // https://github.com/MaterializeInc/materialize/issues/17871
+	     "and not (nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema') and atttypid = 18) " // https://github.com/MaterializeInc/materialize/issues/17871
 	     "and attname not in "
 	     "('xmin', 'xmax', 'ctid', 'cmin', 'cmax', 'tableoid', 'oid') ");
     q += " and relname = " + w.quote(t->name);
@@ -353,6 +353,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "WHERE mz_functions.name not in ('pg_event_trigger_table_rewrite_reason', 'percentile_cont', 'dense_rank', 'cume_dist', 'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
     "AND mz_functions.name !~ '^ri_fkey_' "
     "AND NOT (mz_functions.name in ('sum', 'avg') AND ret_type.oid = 1186) " // https://github.com/MaterializeInc/materialize/issues/18043
+    "AND NOT (mz_functions.name = 'array_agg' AND argument_type_ids = array['s2']) " // https://github.com/MaterializeInc/materialize/issues/18044
     "AND " + procedure_is_aggregate + " AND NOT returns_set AND NOT " + procedure_is_window);
   for (auto row : r) {
     routine proc(row[0].as<string>(),

@@ -12,7 +12,6 @@ grep -v "operator does not exist" | # For list types
 grep -v "more than one record produced in subquery" |
 grep -v "invalid range bound flags" |
 grep -v "argument list must have even number of elements" |
-grep -v "array_agg on arrays not yet supported" |
 grep -v "mz_row_size requires a record type" |
 grep -v "invalid input syntax for type jsonb" |
 grep -v "invalid regular expression" |
@@ -52,8 +51,6 @@ grep -v "expected expression, but found reserved keyword" | # Should fix, but on
 grep -v "Expected right parenthesis, found left parenthesis" | # Should fix, but only happens rarely with cast+coalesce
 grep -v "coalesce could not convert type character" | # https://github.com/MaterializeInc/materialize/issues/17899
 grep -v "coalesce could not convert type \"char\"" | # https://github.com/MaterializeInc/materialize/issues/17899
-grep -v "operator is not unique: character" | # https://github.com/MaterializeInc/materialize/issues/17899
-grep -v "operator is not unique: \"char\"" | # https://github.com/MaterializeInc/materialize/issues/17899
 grep -v "invalid selection: operation may only refer to user-defined tables" | # Seems expected
 #grep -v "cannot reference pseudo type" | # https://github.com/MaterializeInc/materialize/issues/17870
 grep -v "Invalid data in source, saw retractions" | # https://github.com/MaterializeInc/materialize/issues/17874
@@ -62,4 +59,5 @@ grep -v "Evaluation error: internal error: invalid input type" | # https://githu
 grep -v "' not recognized" | # https://github.com/MaterializeInc/materialize/issues/17981
 grep -v "internal error: Invalid data in source, saw negative accumulation for key" | # https://github.com/MaterializeInc/materialize/issues/17509
 grep -v "internal transform error: scalar types do not match" | # https://github.com/MaterializeInc/materialize/issues/18023
+grep -v "array_agg on arrays not yet supported" | # https://github.com/MaterializeInc/materialize/issues/18044
 sort | uniq -c | sort -n

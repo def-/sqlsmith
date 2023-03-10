@@ -61,4 +61,5 @@ grep -v "internal error: Invalid data in source, saw negative accumulation for k
 grep -v "internal transform error: scalar types do not match" | # https://github.com/MaterializeInc/materialize/issues/18023
 grep -v "array_agg on arrays not yet supported" | # https://github.com/MaterializeInc/materialize/issues/18044
 grep -v "Unsupported temporal predicate." | # https://github.com/MaterializeInc/materialize/issues/18048
+grep -v "OneShot plan has temporal constraints" | # https://github.com/MaterializeInc/materialize/issues/18048
 sort | uniq -c | sort -n

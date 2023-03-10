@@ -14,7 +14,6 @@ grep -v "more than one record produced in subquery" |
 grep -v "invalid range bound flags" |
 grep -v "argument list must have even number of elements" |
 grep -v "array_agg on arrays not yet supported" |
-grep -v "sum(interval) not yet supported" |
 grep -v "mz_row_size requires a record type" |
 grep -v "invalid input syntax for type jsonb" |
 grep -v "invalid regular expression" |

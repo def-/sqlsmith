@@ -351,6 +351,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "ON mz_functions.return_type_id = ret_type.id "
     "WHERE mz_functions.name not in ('pg_event_trigger_table_rewrite_reason', 'percentile_cont', 'dense_rank', 'cume_dist', 'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
     "AND mz_functions.name !~ '^ri_fkey_' "
+    "AND NOT (mz_functions.name in ('sum', 'avg') AND ret_type.oid = 1186) " // https://github.com/MaterializeInc/materialize/issues/18043
     "AND " + procedure_is_aggregate + " AND NOT returns_set AND NOT " + procedure_is_window);
   for (auto row : r) {
     routine proc(row[0].as<string>(),

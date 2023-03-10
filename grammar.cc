@@ -704,3 +704,66 @@ shared_ptr<when_clause> when_clause::factory(struct merge_stmt *p)
   return factory(p);
 }
 
+
+void explain_stmt::out(std::ostream &out) {
+  out << "explain ";
+  bool for_supported = true;
+  switch(d6()) {
+  case 1:
+    for_supported = false;
+    break;
+  case 2:
+    out << "raw plan ";
+    break;
+  case 3:
+    out << "decorrelated plan ";
+    break;
+  case 4:
+    out << "optimized plan ";
+    break;
+  case 5:
+    out << "physical plan ";
+    break;
+  case 6:
+    out << "timestamp ";
+    break;
+  }
+  if(d6() > 2) {
+    out << "with (";
+    switch(d6()) {
+    case 1:
+      out << "arity, join_impls";
+      break;
+    case 2:
+      out << "arity, join_impls, keys, types";
+      break;
+    case 3:
+      out << "keys, types";
+      break;
+    case 4:
+      out << "keys";
+      break;
+    case 5:
+      out << "join_impls, types";
+      break;
+    case 6:
+      out << "types";
+      break;
+    }
+    out << ") ";
+  }
+  out << "as ";
+  switch(d6()) {
+  case 1:
+  case 2:
+  case 3:
+    out << "json ";
+    break;
+  default:
+    out << "text ";
+  }
+  if (for_supported) {
+    out << "for ";
+  }
+  out << *q;
+}

@@ -316,9 +316,7 @@ shared_ptr<prod> statement_factory(struct scope *s, long max_joins=1, struct pro
 
 struct explain_stmt : prod {
   shared_ptr<prod> q;
-  virtual void out(std::ostream &out) {
-    out << "explain " << *q;
-  }
+  virtual void out(std::ostream &out);
   explain_stmt(struct prod* p, shared_ptr<prod> query) : prod(p), q(query) {
   }
   virtual void accept(prod_visitor *v) {

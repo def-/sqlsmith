@@ -11,15 +11,11 @@ grep -v "operator does not exist" | # For list types
 # Refinement:
 grep -v "more than one record produced in subquery" |
 grep -v "invalid range bound flags" |
-grep -v "argument list must have even number of elements" |
-grep -v "mz_row_size requires a record type" |
 grep -v "invalid input syntax for type jsonb" |
 grep -v "invalid regular expression" |
-grep -v "aggregate functions are not allowed in" |
 grep -v "invalid input syntax for type date" |
 grep -v "invalid escape string" |
 grep -v "invalid hash algorithm" |
-grep -v "nested aggregate functions are not allowed" |
 grep -v "is defined for numbers greater than or equal to" |
 grep -v "is not defined for zero" |
 grep -v "is not defined for negative numbers" |

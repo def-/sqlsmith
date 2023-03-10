@@ -104,18 +104,13 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 
   pqxx::work w(c);
   //w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
-  pqxx::result r = w.exec("select version()");
-  version = r[0][0].as<string>();
 
-  r = w.exec("SHOW server_version_num");
-  version_num = r[0][0].as<int>();
-
-  string procedure_is_aggregate = "mz_functions.name in ('array_agg', 'avg', 'bit_and', 'bit_or', 'bit_xor', 'bool_and', 'bool_or', 'count', 'every', 'json_agg', 'jsonb_agg', 'json_object_agg', 'jsonb_object_agg', 'max', 'min', 'range_agg', 'range_intersect_agg', 'string_agg', 'sum', 'xmlagg', 'corr', 'covar_pop', 'covar_samp', 'regr_avgx', 'regr_avgy', 'regr_count', 'regr_intercept', 'regr_r2', 'regr_slope', 'regr_sxx', 'regr_sxy', 'stddev', 'stddev_pop', 'stddev_samp', 'variance', 'var_pop', 'var_samp', 'mode', 'percentile_cont', 'percentile_disc', 'rank', 'dense_rank', 'percent_rank', 'grouping')";
+  string procedure_is_aggregate = "mz_functions.name in ('array_agg', 'avg', 'bit_and', 'bit_or', 'bit_xor', 'bool_and', 'bool_or', 'count', 'every', 'json_agg', 'jsonb_agg', 'json_object_agg', 'jsonb_object_agg', 'max', 'min', 'range_agg', 'range_intersect_agg', 'string_agg', 'sum', 'xmlagg', 'corr', 'covar_pop', 'covar_samp', 'regr_avgx', 'regr_avgy', 'regr_count', 'regr_intercept', 'regr_r2', 'regr_slope', 'regr_sxx', 'regr_sxy', 'stddev', 'stddev_pop', 'stddev_samp', 'variance', 'var_pop', 'var_samp', 'mode', 'percentile_cont', 'percentile_disc', 'rank', 'dense_rank', 'percent_rank', 'grouping', 'mz_all', 'mz_any')";
   string procedure_is_window = "mz_functions.name in ('row_number', 'rank', 'dense_rank', 'percent_rank', 'cume_dist', 'ntile', 'lag', 'lead', 'first_value', 'last_value', 'nth_value')";
 
   cerr << "Loading types...";
 
-  r = w.exec("select typname, "
+  pqxx::result r = w.exec("select typname, "
 	     "oid, ',' as typdelim, typrelid, typelem, typarray, typtype "
 	     "from pg_type ");
   
@@ -295,6 +290,8 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name <> 'jsonb_each' " // https://github.com/MaterializeInc/materialize/issues/18020
     "AND mz_functions.name <> 'jsonb_each_text' " // https://github.com/MaterializeInc/materialize/issues/18020
     "AND mz_functions.name <> 'jsonb_object_keys' " // https://github.com/MaterializeInc/materialize/issues/18020
+    "AND mz_functions.name <> 'mz_row_size' " // mz_row_size requires a record type
+    "AND mz_functions.name <> 'jsonb_build_object' " // argument list must have even number of elements
     "AND NOT (returns_set or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
   for (auto row : r) {
@@ -354,6 +351,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name !~ '^ri_fkey_' "
     "AND NOT (mz_functions.name in ('sum', 'avg') AND ret_type.oid = 1186) " // https://github.com/MaterializeInc/materialize/issues/18043
     "AND mz_functions.name <> 'array_agg' " // https://github.com/MaterializeInc/materialize/issues/18044
+    "AND NOT mz_functions.name in ('mz_all', 'mz_any') " // https://github.com/MaterializeInc/materialize/issues/18057
     "AND " + procedure_is_aggregate + " AND NOT returns_set AND NOT " + procedure_is_window);
   for (auto row : r) {
     routine proc(row[0].as<string>(),

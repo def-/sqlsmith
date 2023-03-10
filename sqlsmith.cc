@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
   cerr << PACKAGE_NAME " " GITREV << endl;
 
   map<string,string> options;
-  regex optregex("--(help|log-to|verbose|target|sqlite|monetdb|version|dump-all-graphs|dump-all-queries|seed|dry-run|max-queries|rng-state|exclude-catalog|max-joins|log-json)(?:=((?:.|\n)*))?");
+  regex optregex("--(help|log-to|verbose|target|sqlite|monetdb|version|dump-all-graphs|dump-all-queries|seed|dry-run|max-queries|rng-state|exclude-catalog|explain-only|max-joins|log-json)(?:=((?:.|\n)*))?");
   
   for(char **opt = argv+1 ;opt < argv+argc; opt++) {
     smatch match;
@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
       "    --dump-all-graphs    dump generated ASTs" << endl <<
       "    --dry-run            print queries instead of executing them" << endl <<
       "    --exclude-catalog    don't generate queries using catalog relations" << endl <<
+      "    --explain-only       only run EXPLAIN queries" << endl <<
       "    --max-queries=long   terminate after generating this many queries" << endl <<
       "    --max-joins=long     max number of joins (1 by default)" << endl <<
       "    --rng-state=string   deserialize dumped rng state" << endl <<
@@ -168,12 +169,13 @@ int main(int argc, char *argv[])
       long queries_generated = 0;
       schema->fill_scope(scope);
 
+      long max_joins = 1;
+      if (options.count("max-joins"))
+        max_joins = stol(options["max-joins"]);
+
       if (options.count("dry-run")) {
 	while (1) {
-    long max_joins = 1;
-	  if (options.count("max-joins"))
-	      max_joins = stol(options["max-joins"]);
-	  shared_ptr<prod> gen = statement_factory(&scope, max_joins);
+          shared_ptr<prod> gen = options.count("explain-only") ? explain_factory(&scope, max_joins) : statement_factory(&scope, max_joins);
 	  gen->out(cout);
 	  for (auto l : loggers)
 	    l->generated(*gen);
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
 	    }
 	    
 	    /* Invoke top-level production to generate AST */
-	    shared_ptr<prod> gen = statement_factory(&scope);
+            shared_ptr<prod> gen = options.count("explain-only") ? explain_factory(&scope, max_joins) : statement_factory(&scope, max_joins);
 
 	    for (auto l : loggers)
 	      l->generated(*gen);

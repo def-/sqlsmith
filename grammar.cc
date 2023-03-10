@@ -476,32 +476,38 @@ upsert_stmt::upsert_stmt(prod *p, struct scope *s, table *v)
   constraint = random_pick(victim->constraints);
 }
 
-shared_ptr<prod> statement_factory(struct scope *s, long max_joins)
+shared_ptr<prod> statement_factory(struct scope *s, long max_joins, struct prod *parent)
 {
   try {
     g_joins = max_joins;
     s->new_stmt();
     // Syntax: ERROR:  Unexpected keyword MERGE at the beginning of a statement
     //if (d42() == 1)
-    //  return make_shared<merge_stmt>((struct prod *)0, s);
+    //  return make_shared<merge_stmt>(parent, s);
     if (d42() == 1)
-      return make_shared<insert_stmt>((struct prod *)0, s);
+      return make_shared<insert_stmt>(parent, s);
     // Syntax: ERROR:  Expected end of statement, found RETURNING
     //else if (d42() == 1)
-    //  return make_shared<delete_returning>((struct prod *)0, s);
+    //  return make_shared<delete_returning>(parent, s);
     else if (d42() == 1)
-      return make_shared<upsert_stmt>((struct prod *)0, s);
+      return make_shared<upsert_stmt>(parent, s);
     // Syntax: ERROR:  Expected end of statement, found RETURNING
     //else if (d42() == 1)
-    //  return make_shared<update_returning>((struct prod *)0, s);
+    //  return make_shared<update_returning>(parent, s);
     else if (d6() > 4)
-      return make_shared<select_for_update>((struct prod *)0, s);
+      return make_shared<select_for_update>(parent, s);
     else if (d6() > 5)
-      return make_shared<common_table_expression>((struct prod *)0, s);
-    return make_shared<query_spec>((struct prod *)0, s);
+      return make_shared<common_table_expression>(parent, s);
+    return make_shared<query_spec>(parent, s);
   } catch (runtime_error &e) {
     return statement_factory(s);
   }
+}
+
+shared_ptr<prod> explain_factory(struct scope *s, long max_joins)
+{
+  shared_ptr<prod> p = statement_factory(s, max_joins);
+  return make_shared<explain_stmt>((struct prod *)0, p);
 }
 
 void common_table_expression::accept(prod_visitor *v)

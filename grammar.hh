@@ -312,7 +312,22 @@ struct update_returning : update_stmt {
   }
 };
 
-shared_ptr<prod> statement_factory(struct scope *s, long max_joins=1);
+shared_ptr<prod> statement_factory(struct scope *s, long max_joins=1, struct prod *parent = 0);
+
+struct explain_stmt : prod {
+  shared_ptr<prod> q;
+  virtual void out(std::ostream &out) {
+    out << "explain " << *q;
+  }
+  explain_stmt(struct prod* p, shared_ptr<prod> query) : prod(p), q(query) {
+  }
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    q->accept(v);
+  }
+};
+
+shared_ptr<prod> explain_factory(struct scope *s, long max_joins=1);
 
 struct common_table_expression : prod {
   vector<shared_ptr<prod> > with_queries;

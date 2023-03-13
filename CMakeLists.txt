@@ -83,7 +83,7 @@ configure_file(config_h.cmake.in config.h)
 # get our git tag
 set(GIT_TAG UNRELEASED)
 execute_process(
-        COMMAND git describe --exclude=debian* --dirty --tags --always
+        COMMAND git rev-parse --short HEAD
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
         OUTPUT_VARIABLE GIT_TAG
         OUTPUT_STRIP_TRAILING_WHITESPACE

@@ -486,14 +486,12 @@ shared_ptr<prod> statement_factory(struct scope *s, long max_joins, struct prod 
     //  return make_shared<merge_stmt>(parent, s);
     if (d42() == 1)
       return make_shared<insert_stmt>(parent, s);
-    // Syntax: ERROR:  Expected end of statement, found RETURNING
-    //else if (d42() == 1)
-    //  return make_shared<delete_returning>(parent, s);
+    else if (d42() == 1)
+      return make_shared<delete_returning>(parent, s);
     else if (d42() == 1)
       return make_shared<upsert_stmt>(parent, s);
-    // Syntax: ERROR:  Expected end of statement, found RETURNING
-    //else if (d42() == 1)
-    //  return make_shared<update_returning>(parent, s);
+    else if (d42() == 1)
+      return make_shared<update_returning>(parent, s);
     else if (d6() > 4)
       return make_shared<select_for_update>(parent, s);
     else if (d6() > 5)

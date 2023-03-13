@@ -196,7 +196,8 @@ struct delete_returning : delete_stmt {
   delete_returning(prod *p, struct scope *s, table *victim = 0);
   virtual void out(std::ostream &out) {
     delete_stmt::out(out);
-    out << std::endl << "returning " << *select_list;
+    // Syntax: ERROR:  Expected end of statement, found RETURNING
+    //out << std::endl << "returning " << *select_list;
   }
   virtual void accept(prod_visitor *v) {
     v->visit(this);
@@ -302,7 +303,8 @@ struct update_returning : update_stmt {
   update_returning(prod *p, struct scope *s, table *victim = 0);
   virtual void out(std::ostream &out) {
     update_stmt::out(out);
-    out << std::endl << "returning " << *select_list;
+    // Syntax: ERROR:  Expected end of statement, found RETURNING
+    //out << std::endl << "returning " << *select_list;
   }
   virtual void accept(prod_visitor *v) {
     v->visit(this);

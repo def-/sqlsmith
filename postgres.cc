@@ -200,7 +200,6 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 	     "from pg_attribute join pg_class c on( c.oid = attrelid ) "
 	     "join pg_namespace n on n.oid = relnamespace "
 	     "where not attisdropped "
-	     "and not (nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema') and atttypid = 18) " // https://github.com/MaterializeInc/materialize/issues/17871
 	     "and attname not in "
 	     "('xmin', 'xmax', 'ctid', 'cmin', 'cmax', 'tableoid', 'oid') ");
     q += " and relname = " + w.quote(t->name);

@@ -9,6 +9,7 @@ grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 grep -v "operator does not exist" | # For list types
 # Refinement:
+grep -v "function sin is only defined for finite arguments" |
 grep -v "more than one record produced in subquery" |
 grep -v "invalid range bound flags" |
 grep -v "invalid input syntax for type jsonb" |

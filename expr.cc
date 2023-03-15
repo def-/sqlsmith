@@ -20,9 +20,9 @@ shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint)
     // ERROR:  aggregate window functions not yet supported
     //if (1 == d20() && p->level < d6() && window_function::allowed(p))
     //  return make_shared<window_function>(p, type_constraint);
-    if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("range", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
+    if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
       return make_shared<coalesce>(p, type_constraint);
-    else if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("range", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
+    else if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
       return make_shared<nullif>(p, type_constraint);
     else if (p->level < d6() && d6() == 1)
       return make_shared<funcall>(p, type_constraint);
@@ -288,7 +288,7 @@ void funcall::out(std::ostream &out)
   for (auto expr = parms.begin(); expr != parms.end(); expr++) {
     indent(out);
     // https://github.com/MaterializeInc/materialize/issues/17870
-    if ((*expr)->type->name.rfind("list", 0) != 0 && (*expr)->type->name.rfind("map", 0) != 0 && (*expr)->type->name.rfind("record", 0) != 0 && (*expr)->type->name.rfind("range", 0) != 0 && (*expr)->type->name.rfind("any", 0) != 0)
+    if ((*expr)->type->name.rfind("list", 0) != 0 && (*expr)->type->name.rfind("map", 0) != 0 && (*expr)->type->name.rfind("record", 0) != 0 && (*expr)->type->name.rfind("any", 0) != 0)
       out << "CAST(" << **expr << " as " << (*expr)->type->name << ")";
     else
       out << **expr;

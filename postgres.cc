@@ -105,7 +105,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   pqxx::work w(c);
   //w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
 
-  string procedure_is_aggregate = "mz_functions.name in ('array_agg', 'avg', 'bit_and', 'bit_or', 'bit_xor', 'bool_and', 'bool_or', 'count', 'every', 'json_agg', 'jsonb_agg', 'json_object_agg', 'jsonb_object_agg', 'max', 'min', 'range_agg', 'range_intersect_agg', 'string_agg', 'sum', 'xmlagg', 'corr', 'covar_pop', 'covar_samp', 'regr_avgx', 'regr_avgy', 'regr_count', 'regr_intercept', 'regr_r2', 'regr_slope', 'regr_sxx', 'regr_sxy', 'stddev', 'stddev_pop', 'stddev_samp', 'variance', 'var_pop', 'var_samp', 'mode', 'percentile_cont', 'percentile_disc', 'rank', 'dense_rank', 'percent_rank', 'grouping', 'mz_all', 'mz_any')";
+  string procedure_is_aggregate = "mz_functions.name in ('array_agg', 'avg', 'bit_and', 'bit_or', 'bit_xor', 'bool_and', 'bool_or', 'count', 'every', 'json_agg', 'jsonb_agg', 'json_object_agg', 'jsonb_object_agg', 'list_agg', 'max', 'min', 'range_agg', 'range_intersect_agg', 'string_agg', 'sum', 'xmlagg', 'corr', 'covar_pop', 'covar_samp', 'regr_avgx', 'regr_avgy', 'regr_count', 'regr_intercept', 'regr_r2', 'regr_slope', 'regr_sxx', 'regr_sxy', 'stddev', 'stddev_pop', 'stddev_samp', 'variance', 'var_pop', 'var_samp', 'mode', 'percentile_cont', 'percentile_disc', 'rank', 'dense_rank', 'percent_rank', 'grouping', 'mz_all', 'mz_any')";
   string procedure_is_window = "mz_functions.name in ('row_number', 'rank', 'dense_rank', 'percent_rank', 'cume_dist', 'ntile', 'lag', 'lead', 'first_value', 'last_value', 'nth_value')";
 
   cerr << "Loading types...";
@@ -143,7 +143,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   booltype = name2type["bool"];
   inttype = name2type["int4"];
 
-  internaltype = name2type["internal"];
+  //internaltype = name2type["internal"];
   arraytype = name2type["anyarray"];
 
   cerr << "done." << endl;
@@ -283,6 +283,8 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name <> 'date_bin' " // binary date_bin is unsupported
     "AND mz_functions.name <> 'list_length_max' " // list_length_max is unsupported
     "AND mz_functions.name <> 'list_n_layers' " // list_n_layers is unsupported
+    "AND mz_functions.name <> 'list_remove' " // list_remove is unsupported
+    "AND mz_functions.name <> 'array_in' " // https://github.com/MaterializeInc/materialize/issues/18144
     "AND mz_functions.name <> 'concat_agg' " // concat_agg not yet supported
     "AND mz_functions.name <> 'generate_series' " // https://github.com/MaterializeInc/materialize/issues/18020
     "AND mz_functions.name <> 'jsonb_array_elements' " // https://github.com/MaterializeInc/materialize/issues/18020
@@ -292,6 +294,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name <> 'jsonb_object_keys' " // https://github.com/MaterializeInc/materialize/issues/18020
     "AND mz_functions.name <> 'mz_row_size' " // mz_row_size requires a record type
     "AND mz_functions.name <> 'jsonb_build_object' " // argument list must have even number of elements
+    "AND mz_functions.name not like '%range' " // https://github.com/MaterializeInc/materialize/issues/18036
+    "AND mz_functions.name <> 'mz_error_if_null' " // https://github.com/MaterializeInc/materialize/issues/18036
+    "AND mz_functions.name <> 'mz_now' " // https://github.com/MaterializeInc/materialize/issues/18045
     "AND NOT (returns_set or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
   for (auto row : r) {
@@ -313,11 +318,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     q += w.quote(proc.specific_name);
 
     r = w.exec(q);
-    string previous;
-    OID oid;
+    string previous = "NONE";
+    OID oid = 0;
     for (auto row : r) {
       string s = row[0].as<string>();
-      string segment;
+      string segment = "";
       std::stringstream test(s);
       while (std::getline(test, segment, ',')) {
         if (segment != previous) {
@@ -372,11 +377,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     q += w.quote(proc.specific_name);
 
     r = w.exec(q);
-    string previous;
-    OID oid;
+    string previous = "NONE";
+    OID oid = 0;
     for (auto row : r) {
       string s = row[0].as<string>();
-      string segment;
+      string segment = "";
       std::stringstream test(s);
       while (std::getline(test, segment, ',')) {
         if (segment != previous) {

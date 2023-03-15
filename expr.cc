@@ -213,7 +213,11 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
     expr = "null";
   else if (type->name == "anyarray")
     expr = "array[null, null]";
+  else if (type->name == "anycompatiblearray")
+    expr = "array[null, null]";
   else if (type->name == "list")
+    expr = "list[null, null]";
+  else if (type->name == "anycompatiblelist")
     expr = "list[null, null]";
   else if (type->name == "anyrange")
     expr = "numrange(0,0)";
@@ -232,8 +236,8 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
 funcall::funcall(prod *p, sqltype *type_constraint, bool agg)
   : value_expr(p), is_aggregate(agg)
 {
-  if (type_constraint == scope->schema->internaltype)
-    fail("cannot call functions involving internal type");
+  //if (type_constraint == scope->schema->internaltype)
+  //  fail("cannot call functions involving internal type");
 
   auto &idx = agg ? p->scope->schema->aggregates_returning_type
     : (4 < d6()) ?
@@ -263,17 +267,17 @@ funcall::funcall(prod *p, sqltype *type_constraint, bool agg)
   else
     type = proc->restype;
 
-  if (type == scope->schema->internaltype) {
-    retry();
-    goto retry;
-  }
+  //if (type == scope->schema->internaltype) {
+  //  retry();
+  //  goto retry;
+  //}
 
-  for (auto type : proc->argtypes)
-    if (type == scope->schema->internaltype
-	|| type == scope->schema->arraytype) {
-      retry();
-      goto retry;
-    }
+  //for (auto type : proc->argtypes)
+  //  if (type == scope->schema->internaltype
+  //      || type == scope->schema->arraytype) {
+  //    retry();
+  //    goto retry;
+  //  }
   
   for (auto argtype : proc->argtypes) {
     assert(argtype);

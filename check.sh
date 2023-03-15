@@ -9,6 +9,13 @@ grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 grep -v "operator does not exist" | # For list types
 # Refinement:
+grep -v "function pg_catalog.array_remove(" |
+grep -v "function pg_catalog.array_cat(" |
+grep -v "function mz_catalog.list_append(" |
+grep -v "function mz_catalog.list_prepend(" |
+grep -v "does not support implicitly casting from" |
+grep -v "aggregate functions that refer exclusively to outer columns not yet supported" | # https://github.com/MaterializeInc/materialize/issues/3720
+grep -v "range lower bound must be less than or equal to range upper bound" |
 grep -v "length must be nonnegative" |
 grep -v "function sin is only defined for finite arguments" |
 grep -v "more than one record produced in subquery" |

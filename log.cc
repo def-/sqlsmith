@@ -137,10 +137,6 @@ json_logger::json_logger()
 : data()
 {
   data["version"] = GITREV;
-
-  ostringstream seed;
-  seed << smith::rng;
-  data["seed"] = stoi(seed.str());
   data["queries"] = 0;
   data["errors"] = json::array();
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 cat $* |
-grep -E "^(Broken|Syntax|Error) " |
+grep -a -E "^(Broken|Syntax|Error) " |
 # Expected AFTER a crash, the query before this is interesting, not the ones after
 grep -v "Broken 08000: no connection to the server" |
 grep -v "failed: Connection refused" |
@@ -9,6 +9,7 @@ grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 grep -v "operator does not exist" | # For list types
 # Refinement:
+grep -v "range constructor flags argument must not be null" |
 grep -v "function pg_catalog.array_remove(" |
 grep -v "function pg_catalog.array_cat(" |
 grep -v "function mz_catalog.list_append(" |

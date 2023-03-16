@@ -504,8 +504,18 @@ shared_ptr<prod> statement_factory(struct scope *s, long max_joins, struct prod 
 
 shared_ptr<prod> explain_factory(struct scope *s, long max_joins)
 {
-  shared_ptr<prod> p = statement_factory(s, max_joins);
-  return make_shared<explain_stmt>((struct prod *)0, p);
+  try {
+    std::shared_ptr<prod> p;
+    g_joins = max_joins;
+    s->new_stmt();
+    if (d6() > 5)
+      p = make_shared<common_table_expression>((struct prod *)0, s);
+    else
+      p = make_shared<query_spec>((struct prod *)0, s);
+    return make_shared<explain_stmt>((struct prod *)0, p);
+  } catch (runtime_error &e) {
+    return explain_factory(s);
+  }
 }
 
 void common_table_expression::accept(prod_visitor *v)

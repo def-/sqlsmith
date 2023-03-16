@@ -17,7 +17,7 @@ grep -v "does not support implicitly casting from" |
 grep -v "aggregate functions that refer exclusively to outer columns not yet supported" | # https://github.com/MaterializeInc/materialize/issues/3720
 grep -v "range lower bound must be less than or equal to range upper bound" |
 grep -v "length must be nonnegative" |
-grep -v "function sin is only defined for finite arguments" |
+grep -v "is only defined for finite arguments" |
 grep -v "more than one record produced in subquery" |
 grep -v "invalid range bound flags" |
 grep -v "invalid input syntax for type jsonb" |

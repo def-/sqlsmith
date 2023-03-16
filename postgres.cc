@@ -294,8 +294,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name <> 'jsonb_object_keys' " // https://github.com/MaterializeInc/materialize/issues/18020
     "AND mz_functions.name <> 'mz_row_size' " // mz_row_size requires a record type
     "AND mz_functions.name <> 'jsonb_build_object' " // argument list must have even number of elements
-    "AND mz_functions.name not like '%range' " // https://github.com/MaterializeInc/materialize/issues/18036
-    "AND mz_functions.name <> 'mz_error_if_null' " // https://github.com/MaterializeInc/materialize/issues/18036
+    "AND mz_functions.name <> 'mz_error_if_null' " // expected, see https://github.com/MaterializeInc/materialize/issues/18036
     "AND mz_functions.name <> 'mz_now' " // https://github.com/MaterializeInc/materialize/issues/18045
     "AND NOT (returns_set or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 

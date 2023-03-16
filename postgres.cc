@@ -284,7 +284,6 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name <> 'list_length_max' " // list_length_max is unsupported
     "AND mz_functions.name <> 'list_n_layers' " // list_n_layers is unsupported
     "AND mz_functions.name <> 'list_remove' " // list_remove is unsupported
-    "AND mz_functions.name <> 'array_in' " // https://github.com/MaterializeInc/materialize/issues/18144
     "AND mz_functions.name <> 'concat_agg' " // concat_agg not yet supported
     "AND mz_functions.name <> 'generate_series' " // https://github.com/MaterializeInc/materialize/issues/18020
     "AND mz_functions.name <> 'jsonb_array_elements' " // https://github.com/MaterializeInc/materialize/issues/18020

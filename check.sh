@@ -9,6 +9,9 @@ grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 grep -v "operator does not exist" | # For list types
 # Refinement:
+grep -v "value too long for type" |
+grep -v "list_agg on char not yet supported" |
+grep -v "does not allow subqueries" |
 grep -v "range constructor flags argument must not be null" |
 grep -v "function pg_catalog.array_remove(" |
 grep -v "function pg_catalog.array_cat(" |
@@ -68,4 +71,6 @@ grep -v "internal transform error: scalar types do not match" | # https://github
 grep -v "array_agg on arrays not yet supported" | # https://github.com/MaterializeInc/materialize/issues/18044
 grep -v "Unsupported temporal predicate." | # https://github.com/MaterializeInc/materialize/issues/18048
 grep -v "OneShot plan has temporal constraints" | # https://github.com/MaterializeInc/materialize/issues/18048
+grep -v "unexpected ScalarExpr in uncorrelated plan" | # https://github.com/MaterializeInc/materialize/issues/18188
+grep -v "internal error: cannot evaluate unmaterializable function" | # https://github.com/MaterializeInc/materialize/issues/14290
 sort | uniq -c | sort -n

@@ -80,14 +80,14 @@ column_reference::column_reference(prod *p, sqltype *type_constraint) : value_ex
   if (type_constraint) {
     auto pairs = scope->refs_of_type(type_constraint);
     auto picked = random_pick(pairs);
-    reference += scope->schema->quote_name(picked.first->ident())
+    reference += picked.first->ident()
       + "." + scope->schema->quote_name(picked.second.name);
     type = picked.second.type;
     assert(type_constraint->consistent(type));
   } else {
     named_relation *r = random_pick(scope->refs);
 
-    reference += scope->schema->quote_name(r->ident()) + ".";
+    reference += r->ident() + ".";
     column &c = random_pick(r->columns());
     type = c.type;
     reference += scope->schema->quote_name(c.name);

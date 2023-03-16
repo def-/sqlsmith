@@ -428,30 +428,33 @@ void dut_libpq::connect(std::string &conninfo)
     command("set client_min_messages to 'ERROR';");
     command("set application_name to '" PACKAGE "::dut';");
 
-    //static bool created_cluster = false;
-    //static int seed;
-    //if (!created_cluster) {
-    //  ostringstream sseed;
-    //  sseed << smith::rng;
-    //  seed = stoi(sseed.str());
-    //  string cmd = "drop cluster if exists sqlsmith";
-    //  cmd += to_string(seed);
-    //  cmd += " cascade";
-    //  command(cmd);
-    //  cmd = "create cluster sqlsmith";
-    //  cmd += to_string(seed);
-    //  cmd += " replicas (r1 (size = '1'))";
-    //  command(cmd);
-    //}
-    //string cmd = "set cluster to sqlsmith";
-    //cmd += to_string(seed);
-    //command(cmd);
+    if (create_cluster_) {
+      static bool created_cluster = false;
+      static int seed;
+      if (!created_cluster) {
+        ostringstream sseed;
+        sseed << smith::rng;
+        seed = stoi(sseed.str());
+        string cmd = "drop cluster if exists sqlsmith";
+        cmd += to_string(seed);
+        cmd += " cascade";
+        command(cmd);
+        cmd = "create cluster sqlsmith";
+        cmd += to_string(seed);
+        cmd += " replicas (r1 (size = '1'))";
+        command(cmd);
+      }
+      string cmd = "set cluster to sqlsmith";
+      cmd += to_string(seed);
+      command(cmd);
+    }
 
     PQsetNoticeReceiver(conn, dut_libpq_notice_rx, (void *) 0);
 }
 
-dut_libpq::dut_libpq(std::string conninfo)
+dut_libpq::dut_libpq(std::string conninfo, bool create_cluster)
     : conninfo_(conninfo)
+    , create_cluster_(create_cluster)
 {
     connect(conninfo);
 }

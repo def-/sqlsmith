@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
   cerr << PACKAGE_NAME " " GITREV << endl;
 
   map<string,string> options;
-  regex optregex("--(help|log-to|verbose|create-cluster|target|sqlite|monetdb|version|dump-all-graphs|dump-all-queries|seed|dry-run|max-queries|rng-state|exclude-catalog|explain-only|max-joins|log-json)(?:=((?:.|\n)*))?");
+  regex optregex("--(help|log-to|verbose|use-cluster|target|sqlite|monetdb|version|dump-all-graphs|dump-all-queries|seed|dry-run|max-queries|rng-state|exclude-catalog|explain-only|max-joins|log-json)(?:=((?:.|\n)*))?");
   
   for(char **opt = argv+1 ;opt < argv+argc; opt++) {
     smatch match;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
       "    --max-queries=long   terminate after generating this many queries" << endl <<
       "    --max-joins=long     max number of joins (1 by default)" << endl <<
       "    --rng-state=string   deserialize dumped rng state" << endl <<
-      "    --create-cluster     create a compute cluster and use it" << endl <<
+      "    --use-cluster=string use a specified compute cluster" << endl <<
       "    --verbose            emit progress output" << endl <<
       "    --version            print version information and exit" << endl <<
       "    --help               print available command line options and exit" << endl;
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 #endif
       }
       else
-	dut = make_shared<dut_libpq>(options["target"], options.count("create-cluster"));
+	dut = make_shared<dut_libpq>(options["target"], options.count("use-cluster") ? options["use-cluster"] : "");
 
       while (1) /* Loop to recover connection loss */
       {

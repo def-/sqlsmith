@@ -58,6 +58,8 @@ grep -v "operator does not exist: map" | # Should fix, but only happens rarely
 grep -v "result exceeds max size of" | # Seems expected with huge queries
 grep -v "expected expression, but found reserved keyword" | # Should fix, but only happens rarely with subqueries
 grep -v "Expected right parenthesis, found left parenthesis" | # Should fix, but only happens rarely with cast+coalesce
+grep -v "coalesce could not convert type character" | # https://github.com/MaterializeInc/materialize/issues/17899
+grep -v "coalesce could not convert type \"char\"" | # https://github.com/MaterializeInc/materialize/issues/17899
 grep -v "invalid selection: operation may only refer to user-defined tables" | # Seems expected
 #grep -v "cannot reference pseudo type" | # https://github.com/MaterializeInc/materialize/issues/17870
 grep -v "Invalid data in source, saw retractions" | # https://github.com/MaterializeInc/materialize/issues/17874

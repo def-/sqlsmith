@@ -240,8 +240,6 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "JOIN mz_catalog.mz_types AS right_type "
     "ON mz_operators.argument_type_ids[2] = right_type.id "
     "WHERE array_length(mz_operators.argument_type_ids, 1) = 2 "
-    "AND mz_operators.name <> '@>' " // https://github.com/MaterializeInc/materialize/issues/18017
-    "AND mz_operators.name <> '<@' " // https://github.com/MaterializeInc/materialize/issues/18017
     "UNION SELECT "
     "mz_operators.name AS oprname, "
     "0 as oprleft, "

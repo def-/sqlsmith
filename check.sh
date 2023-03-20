@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 cat $* |
 grep -a -E "^(Broken|Syntax|Error) " |
+# With testdrive, to investigate
+grep -v ", found operator" | # Syntax, fix
+grep -v ", found identifier" | # Syntax, fix
+grep -v "multiple timelines within one dataflow are not supported" | # Happens very often, figure out how to avoid
+#grep -v "avro deserialization error" | # Expected with public.resolution_int2double, could exclude td file that creates it
+#grep -v "protobuf deserialization error" | # Expected with public.total_garbage, could exclude td file that creates it
+#grep -v "Envelope error: Flat: Value not present for message" | # Expected with public.missing_keys_or_values, could exclude td file that creates it
 # Expected AFTER a crash, the query before this is interesting, not the ones after
 grep -v "Broken 08000: no connection to the server" |
 grep -v "failed: Connection refused" |
 
+grep -v "canceling statement due to statement timeout" | # expected in deletes
+grep -v "numeric field overflow" |
 grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 grep -v "operator does not exist" | # For list types

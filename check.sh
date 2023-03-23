@@ -46,6 +46,7 @@ grep -v "internal error: unrecognized configuration parameter" |
 grep -v "invalid encoding name" |
 grep -v "invalid time zone" |
 grep -v "value out of range: overflow" |
+grep -v "value out of range: underflow" |
 grep -v "LIKE pattern exceeds maximum length" |
 grep -v "negative substring length not allowed" |
 grep -v "cannot take square root of a negative number" |
@@ -53,6 +54,7 @@ grep -v "timestamp units not yet supported" |
 grep -v "step size cannot equal zero" |
 grep -v "stride must be greater than zero" |
 grep -v "timestamp out of range" |
+grep -v "integer out of range" |
 grep -v "unterminated escape sequence in LIKE" |
 grep -v "null character not permitted" |
 grep -v "is defined for numbers between" |

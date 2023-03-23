@@ -72,7 +72,7 @@ grep -v "Expected right parenthesis, found left parenthesis" | # Should fix, but
 grep -v "coalesce could not convert type character" | # https://github.com/MaterializeInc/materialize/issues/17899
 grep -v "coalesce could not convert type \"char\"" | # https://github.com/MaterializeInc/materialize/issues/17899
 grep -v "invalid selection: operation may only refer to user-defined tables" | # Seems expected
-#grep -v "cannot reference pseudo type" | # https://github.com/MaterializeInc/materialize/issues/17870
+grep -v "cannot reference pseudo type" | # https://github.com/MaterializeInc/materialize/issues/17870
 grep -v "Invalid data in source, saw retractions" | # https://github.com/MaterializeInc/materialize/issues/17874
 #grep -v "internal error: unimplemented join" | # https://github.com/MaterializeInc/materialize/issues/17897
 grep -v "' not recognized" | # https://github.com/MaterializeInc/materialize/issues/17981

@@ -85,4 +85,5 @@ grep -v "OneShot plan has temporal constraints" | # https://github.com/Materiali
 grep -v "unexpected ScalarExpr in uncorrelated plan" | # https://github.com/MaterializeInc/materialize/issues/18188
 grep -v "internal error: cannot evaluate unmaterializable function" | # https://github.com/MaterializeInc/materialize/issues/14290
 grep -v "Evaluation error: couldn't parse role id" | # https://github.com/MaterializeInc/materialize/issues/18705
+grep -v "invalid digit found in string" | # https://github.com/MaterializeInc/materialize/issues/18706
 sort | uniq -c | sort -n

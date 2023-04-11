@@ -78,8 +78,7 @@ void dut_pqxx::test(const std::string &stmt)
 {
   try {
     pqxx::work w(c);
-    // Doesn't help with hanging queries, hang pretty often
-    //w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
+    w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
     w.exec(stmt.c_str());
     w.abort();
   } catch (const pqxx::failure &e) {
@@ -103,7 +102,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
   c.set_variable("application_name", "'" PACKAGE "::schema'");
 
   pqxx::work w(c);
-  //w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
+  w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
 
   string procedure_is_aggregate = "mz_functions.name in ('array_agg', 'avg', 'bit_and', 'bit_or', 'bit_xor', 'bool_and', 'bool_or', 'count', 'every', 'json_agg', 'jsonb_agg', 'json_object_agg', 'jsonb_object_agg', 'list_agg', 'max', 'min', 'range_agg', 'range_intersect_agg', 'string_agg', 'sum', 'xmlagg', 'corr', 'covar_pop', 'covar_samp', 'regr_avgx', 'regr_avgy', 'regr_count', 'regr_intercept', 'regr_r2', 'regr_slope', 'regr_sxx', 'regr_sxy', 'stddev', 'stddev_pop', 'stddev_samp', 'variance', 'var_pop', 'var_samp', 'mode', 'percentile_cont', 'percentile_disc', 'rank', 'dense_rank', 'percent_rank', 'grouping', 'mz_all', 'mz_any')";
   string procedure_is_window = "mz_functions.name in ('row_number', 'rank', 'dense_rank', 'percent_rank', 'cume_dist', 'ntile', 'lag', 'lead', 'first_value', 'last_value', 'nth_value')";
@@ -486,8 +485,5 @@ void dut_libpq::command(const std::string &stmt)
 
 void dut_libpq::test(const std::string &stmt)
 {
-    command("ROLLBACK;");
-    command("BEGIN;");
     command(stmt.c_str());
-    command("ROLLBACK;");
 }

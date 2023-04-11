@@ -16,6 +16,7 @@ grep -v "canceling statement due to statement timeout" | # expected in deletes
 grep -v "numeric field overflow" |
 grep -v "violates not-null constraint" |
 grep -v "division by zero" |
+grep -v "zero raised to a negative power is undefined" |
 grep -v "operator does not exist" | # For list types
 # Refinement:
 grep -v "value too long for type" |

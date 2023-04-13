@@ -17,6 +17,9 @@ grep -v "numeric field overflow" |
 grep -v "violates not-null constraint" |
 grep -v "division by zero" |
 grep -v "zero raised to a negative power is undefined" |
+grep -v "cannot return complex numbers" |
+grep -v "unrecognized privilege type" |
+grep -v "statement batch size cannot exceed" |
 grep -v "operator does not exist" | # For list types
 # Refinement:
 grep -v "value too long for type" |

@@ -169,6 +169,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 			   ((insertable == "YES") ? true : false),
 			   ((table_type == "BASE TABLE") ? true : false)));
   }
+  assert(tables.size() > 0);
 
   r = w.exec("select matviewname, "
             "schemaname, "

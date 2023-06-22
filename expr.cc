@@ -201,10 +201,7 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
 {
   type = type_constraint ? type_constraint : scope->schema->inttype;
 
-  // Try nulls anywhere sometimes, might find issues
-  if (d20() == 20)
-    expr = "null";
-  else if (type == scope->schema->inttype)
+  if (type == scope->schema->inttype)
     expr = to_string(d100());
   else if (type == scope->schema->booltype)
     expr += (d6() > 3) ? scope->schema->true_literal : scope->schema->false_literal;

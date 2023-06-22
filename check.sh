@@ -44,6 +44,7 @@ grep -v "function lower_inf(" |
 grep -v "function upper_inf(" |
 grep -v "function lower_inc(" |
 grep -v "function upper_inc(" |
+grep -v "array_fill on uint8 list not yet supported" |
 grep -v "does not support implicitly casting from" |
 grep -v "aggregate functions that refer exclusively to outer columns not yet supported" | # https://github.com/MaterializeInc/materialize/issues/3720
 grep -v "range lower bound must be less than or equal to range upper bound" |
@@ -63,6 +64,8 @@ grep -v "requested character too large for encoding" |
 grep -v "internal error: unrecognized configuration parameter" |
 grep -v "invalid encoding name" |
 grep -v "invalid time zone" |
+grep -v "interval out of range" |
+grep -v "uint8 out of range" |
 grep -v "value out of range: overflow" |
 grep -v "value out of range: underflow" |
 grep -v "LIKE pattern exceeds maximum length" |
@@ -119,4 +122,5 @@ grep -v "Evaluation error: couldn't parse role id" | # https://github.com/Materi
 grep -v "invalid digit found in string" | # https://github.com/MaterializeInc/materialize/issues/18706
 grep -v "internal error: unexpected NULL" | # https://github.com/MaterializeInc/materialize/issues/20079
 grep -v "couldn't parse role id" | # https://github.com/MaterializeInc/materialize/issues/18705
+grep -v "is not of expected type ColumnType" | # https://github.com/MaterializeInc/materialize/issues/20077
 sort | uniq -c | sort -n

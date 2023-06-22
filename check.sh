@@ -123,5 +123,4 @@ grep -v "invalid digit found in string" | # https://github.com/MaterializeInc/ma
 grep -v "internal error: unexpected NULL" | # https://github.com/MaterializeInc/materialize/issues/20079
 grep -v "couldn't parse role id" | # https://github.com/MaterializeInc/materialize/issues/18705
 grep -v "is not of expected type ColumnType" | # https://github.com/MaterializeInc/materialize/issues/20077
-grep -v "coalesce could not convert type time" | # https://github.com/MaterializeInc/materialize/issues/20082
 sort | uniq -c | sort -n

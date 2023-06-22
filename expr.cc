@@ -231,8 +231,16 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
     expr = "'{}'::map[text=>text]";
   else if (type->name == "anycompatiblemap")
     expr = "'{}'::map[text=>text]";
+  else if (type->name == "time")
+    expr = "TIME '01:23:45'";
+  else if (type->name == "timestamp")
+    expr = "TIMESTAMP '2023-01-01 01:23:45'";
+  else if (type->name == "timestamptz")
+    expr = "TIMESTAMP '2023-01-01 01:23:45'";
+  else if (type->name == "interval")
+    expr = "INTERVAL '1' MINUTE";
   else
-    expr += "cast(null as " + type->name + ")";
+    expr = "cast(null as " + type->name + ")";
 }
 
 funcall::funcall(prod *p, sqltype *type_constraint, bool agg)

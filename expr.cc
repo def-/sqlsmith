@@ -26,6 +26,8 @@ shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint)
       return make_shared<nullif>(p, type_constraint);
     else if (p->level < d6() && d6() < 3)
       return make_shared<funcall>(p, type_constraint);
+    else if (p->level < d6() && d6() == 6)
+      return make_shared<opcall>(p, type_constraint);
     else if (d12()==1)
       return make_shared<atomic_subselect>(p, type_constraint);
     else if (p->level< d6() && d9()==1)
@@ -198,8 +200,11 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
     : value_expr(p), expr("")
 {
   type = type_constraint ? type_constraint : scope->schema->inttype;
-      
-  if (type == scope->schema->inttype)
+
+  // Try nulls anywhere sometimes, might find issues
+  if (d20() == 20)
+    expr = "null";
+  else if (type == scope->schema->inttype)
     expr = to_string(d100());
   else if (type == scope->schema->booltype)
     expr += (d6() > 3) ? scope->schema->true_literal : scope->schema->false_literal;
@@ -303,6 +308,31 @@ void funcall::out(std::ostream &out)
   if (is_aggregate && (parms.begin() == parms.end()))
     out << "*";
   out << ")";
+}
+
+opcall::opcall(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  auto &idx = p->scope->schema->operators_returning_type;
+
+  if (!type_constraint) {
+    oper = random_pick(random_pick(idx.begin(), idx.end())->second);
+  } else {
+    auto iters = idx.equal_range(type_constraint);
+    oper = random_pick(random_pick(iters)->second);
+  }
+
+  if (type_constraint)
+    type = type_constraint;
+  else
+    type = oper->result;
+
+  rhs = value_expr::factory(this, oper->right);
+  if (oper->left) {
+    lhs = value_expr::factory(this, oper->left);
+  }
+  assert(oper->right);
+  assert(oper->result);
 }
 
 atomic_subselect::atomic_subselect(prod *p, sqltype *type_constraint)

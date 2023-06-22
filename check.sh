@@ -26,10 +26,24 @@ grep -v "value too long for type" |
 grep -v "list_agg on char not yet supported" |
 grep -v "does not allow subqueries" |
 grep -v "range constructor flags argument must not be null" |
-grep -v "function pg_catalog.array_remove(" |
-grep -v "function pg_catalog.array_cat(" |
-grep -v "function mz_catalog.list_append(" |
-grep -v "function mz_catalog.list_prepend(" |
+grep -v "function array_remove(" |
+grep -v "function array_cat(" |
+grep -v "function array_position(" |
+grep -v "function array_string(" |
+grep -v "function array_to_string(" |
+grep -v "function array_length(" |
+grep -v "function array_upper(" |
+grep -v "function upper_inc(" |
+grep -v "function map_length(" |
+grep -v "function isempty(" |
+grep -v "function list_append(" |
+grep -v "function list_cat(" |
+grep -v "function list_prepend(" |
+grep -v "function list_length(" |
+grep -v "function lower_inf(" |
+grep -v "function upper_inf(" |
+grep -v "function lower_inc(" |
+grep -v "function upper_inc(" |
 grep -v "does not support implicitly casting from" |
 grep -v "aggregate functions that refer exclusively to outer columns not yet supported" | # https://github.com/MaterializeInc/materialize/issues/3720
 grep -v "range lower bound must be less than or equal to range upper bound" |
@@ -64,6 +78,20 @@ grep -v "null character not permitted" |
 grep -v "is defined for numbers between" |
 grep -v "field position must be greater than zero" |
 grep -v "must appear in the GROUP BY clause or be used in an aggregate function" |
+grep -v "pg_cancel_backend in this position not yet supported" |
+grep -v "internal error: role " |
+grep -v "internal error: schema " |
+grep -v "internal error: object " |
+grep -v "internal error: database " |
+grep -v "internal error: global ID " |
+grep -v "invalid datepart" |
+grep -v "string is not a valid identifier" |
+grep -v "could not determine polymorphic type" |
+grep -v "dimension array or low bound array must not be null" |
+
+grep -v "operator is not unique" | # random nulls
+grep -v "cannot be matched" | # random nulls
+grep -v "CAST does not support casting from" | # random nulls
 
 grep -v "Expected joined table, found" | # Should fix for multi table join
 grep -v "Expected ON, or USING after JOIN, found" | # Should fix for multi table join
@@ -89,4 +117,6 @@ grep -v "unexpected ScalarExpr in uncorrelated plan" | # https://github.com/Mate
 grep -v "internal error: cannot evaluate unmaterializable function" | # https://github.com/MaterializeInc/materialize/issues/14290
 grep -v "Evaluation error: couldn't parse role id" | # https://github.com/MaterializeInc/materialize/issues/18705
 grep -v "invalid digit found in string" | # https://github.com/MaterializeInc/materialize/issues/18706
+grep -v "internal error: unexpected NULL" | # https://github.com/MaterializeInc/materialize/issues/20079
+grep -v "couldn't parse role id" | # https://github.com/MaterializeInc/materialize/issues/18705
 sort | uniq -c | sort -n

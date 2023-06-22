@@ -42,6 +42,25 @@ struct funcall : value_expr {
   }
 };
 
+struct opcall : value_expr {
+  op *oper;
+  shared_ptr<value_expr> lhs, rhs;
+  virtual ~opcall() { }
+  opcall(prod *p, sqltype *type_constraint = 0);
+  virtual void out(std::ostream &o) {
+    if(oper->left)
+      o << "(" << *lhs << ") " << oper->name << " (" << *rhs << ")";
+    else
+      o << oper->name << " " << *rhs;
+  }
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    if(oper->left)
+      lhs->accept(v);
+    rhs->accept(v);
+  }
+};
+
 struct atomic_subselect : value_expr {
   table *tab;
   column *col;
@@ -165,7 +184,7 @@ struct comparison_op : bool_binop {
   comparison_op(prod *p);
   virtual ~comparison_op() { };
   virtual void out(std::ostream &o) {
-    o << *lhs << " " << oper->name << " " << *rhs;
+    o << "(" << *lhs << ") " << oper->name << " (" << *rhs << ")";
   }
 };
 

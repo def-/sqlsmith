@@ -49,7 +49,7 @@ struct opcall : value_expr {
   opcall(prod *p, sqltype *type_constraint = 0);
   virtual void out(std::ostream &o) {
     if(oper->left)
-      o << "(" << *lhs << ") " << oper->name << " (" << *rhs << ")";
+      o << "(" << *lhs << " " << oper->name << " " << *rhs << ")";
     else
       o << oper->name << " " << *rhs;
   }
@@ -184,7 +184,7 @@ struct comparison_op : bool_binop {
   comparison_op(prod *p);
   virtual ~comparison_op() { };
   virtual void out(std::ostream &o) {
-    o << "(" << *lhs << ") " << oper->name << " (" << *rhs << ")";
+    o << "(" << *lhs << " " << oper->name << " " << *rhs << ")";
   }
 };
 

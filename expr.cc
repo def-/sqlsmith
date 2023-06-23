@@ -26,7 +26,7 @@ shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint)
       return make_shared<nullif>(p, type_constraint);
     else if (p->level < d6() && d6() < 3)
       return make_shared<funcall>(p, type_constraint);
-    else if (p->level < d6() && d6() < 3)
+    else if (p->level < d6() && d6() == 6)
       return make_shared<opcall>(p, type_constraint);
     else if (d12()==1)
       return make_shared<atomic_subselect>(p, type_constraint);

@@ -295,6 +295,8 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name <> 'jsonb_build_object' " // argument list must have even number of elements
     "AND mz_functions.name <> 'mz_error_if_null' " // expected, see https://github.com/MaterializeInc/materialize/issues/18036
     "AND mz_functions.name <> 'mz_now' " // https://github.com/MaterializeInc/materialize/issues/18045
+    "AND NOT mz_functions.name like 'has_%_privilege' " // common "does not exist" errors
+    "AND NOT mz_functions.name like 'mz_%_oid' " // common "does not exist" errors
     "AND NOT (returns_set or " + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
   for (auto row : r) {
@@ -355,7 +357,6 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND NOT (mz_functions.name in ('sum', 'avg') AND ret_type.oid = 1186) " // https://github.com/MaterializeInc/materialize/issues/18043
     "AND mz_functions.name <> 'array_agg' " // https://github.com/MaterializeInc/materialize/issues/18044
     "AND NOT mz_functions.name in ('mz_all', 'mz_any') " // https://github.com/MaterializeInc/materialize/issues/18057
-    "AND NOT mz_functions.name like 'has_%_privilege' " // common "does not exist" errors
     "AND " + procedure_is_aggregate + " AND NOT returns_set AND NOT " + procedure_is_window);
   for (auto row : r) {
     routine proc(row[0].as<string>(),

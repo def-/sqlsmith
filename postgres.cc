@@ -41,6 +41,8 @@ bool pg_type::consistent(sqltype *rvalue)
       return t->typelem_ != InvalidOid;
     } else if (name == "anynonarray" || name == "anycompatiblenonarray") {
       return t->typelem_ == InvalidOid;
+    } else if (name == "anylist" || name == "anycompatiblelist") {
+      return t->typelem_ != InvalidOid;
     } else if(name == "anyenum") {
       return t->typtype_ == 'e';
     } else if (name == "any" || name == "\"any\"" || name == "anycompatible") { /* as quoted by quote_ident() */

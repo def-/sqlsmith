@@ -91,6 +91,11 @@ grep -v "invalid datepart" |
 grep -v "string is not a valid identifier" |
 grep -v "could not determine polymorphic type" |
 grep -v "dimension array or low bound array must not be null" |
+grep -v "initial position must not be null" |
+grep -v "timezone interval must not contain months or years" |
+grep -v "unrecognized configuration parameter" |
+grep -v "array_fill on text list not yet supported" |
+grep -v "mz_aclitem grantor cannot be PUBLIC role" |
 
 grep -v "operator is not unique" | # random nulls
 grep -v "cannot be matched" | # random nulls

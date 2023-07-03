@@ -96,6 +96,7 @@ grep -v "timezone interval must not contain months or years" |
 grep -v "unrecognized configuration parameter" |
 grep -v "array_fill on text list not yet supported" |
 grep -v "mz_aclitem grantor cannot be PUBLIC role" |
+grep -v "is out of range for type numeric: exceeds maximum precision" |
 
 grep -v "operator is not unique" | # random nulls
 grep -v "cannot be matched" | # random nulls

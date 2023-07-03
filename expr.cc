@@ -232,15 +232,75 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
   else if (type->name == "anycompatiblemap")
     expr = "'{}'::map[text=>text]";
   else if (type->name == "time")
-    expr = "TIME '01:23:45'";
+    if (d42() == 1)
+      expr = "TIME '00:00:00'";
+    else if (d42() == 1)
+      expr = "TIME '23:59:60'";
+    else
+      expr = "TIME '01:23:45'";
   else if (type->name == "timestamp")
-    expr = "TIMESTAMP '2023-01-01 01:23:45'";
+    if (d42() == 1)
+      expr = "(TIMESTAMP '0001-01-01 00:00:00' - INTERVAL '4714 YEARS')";
+    else if (d42() == 1)
+      expr = "(TIMESTAMP '95143-12-31 23:59:59' + INTERVAL '167 MILLENNIUM')";
+    else
+      expr = "TIMESTAMP '2023-01-01 01:23:45'";
   else if (type->name == "timestamptz")
-    expr = "TIMESTAMP '2023-01-01 01:23:45'";
+    if (d42() == 1)
+      expr = "(TIMESTAMPTZ '0001-01-01 00:00:00+06' - INTERVAL '4714 YEARS')";
+    else if (d42() == 1)
+      expr = "(TIMESTAMPTZ '95143-12-31 23:59:59+06' + INTERVAL '167 MILLENNIUM')";
+    else
+      expr = "TIMESTAMPTZ '2023-01-01 01:23:45+06'";
   else if (type->name == "interval")
-    expr = "INTERVAL '1' MINUTE";
+    if (d42() == 1)
+      expr = "INTERVAL '2147483647 MONTHS'";
+    else if (d42() == 1)
+      expr = "INTERVAL '-2147483648 MONTHS'";
+    else
+      expr = "INTERVAL '1' MINUTE";
   else
-    expr = "cast(null as " + type->name + ")";
+    if (d42() == 1) {
+      if (type->name == "int2")
+        expr = "-32768";
+      else if (type->name == "int4")
+        expr = "-2147483648";
+      else if (type->name == "int8")
+        expr = "-9223372036854775808";
+      else if (type->name == "uint2")
+        expr = "0";
+      else if (type->name == "uint4")
+        expr = "0";
+      else if (type->name == "uint8")
+        expr = "0";
+      else if (type->name == "float4")
+        expr = "1E-37";
+      else if (type->name == "float8")
+        expr = "1E-307";
+      else
+        expr = "cast(0 as " + type->name + ")";
+    } else if (d42() == 1) {
+      if (type->name == "int2")
+        expr = "32767";
+      else if (type->name == "int4")
+        expr = "2147483647";
+      else if (type->name == "int8")
+        expr = "9223372036854775807";
+      else if (type->name == "uint2")
+        expr = "65535";
+      else if (type->name == "uint4")
+        expr = "4294967295";
+      else if (type->name == "uint8")
+        expr = "18446744073709551615";
+      else if (type->name == "float4")
+        expr = "1E+37";
+      else if (type->name == "float8")
+        expr = "1E+307";
+      else
+        expr = "cast(1 as " + type->name + ")";
+    } else {
+      expr = "cast(null as " + type->name + ")";
+    }
 }
 
 funcall::funcall(prod *p, sqltype *type_constraint, bool agg)

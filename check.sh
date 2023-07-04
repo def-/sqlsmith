@@ -65,7 +65,10 @@ grep -v "internal error: unrecognized configuration parameter" |
 grep -v "invalid encoding name" |
 grep -v "invalid time zone" |
 grep -v "interval out of range" |
+grep -v "uint2 out of range" |
+grep -v "uint4 out of range" |
 grep -v "uint8 out of range" |
+grep -v "out of valid range" |
 grep -v "value out of range: overflow" |
 grep -v "value out of range: underflow" |
 grep -v "LIKE pattern exceeds maximum length" |
@@ -76,6 +79,8 @@ grep -v "step size cannot equal zero" |
 grep -v "stride must be greater than zero" |
 grep -v "timestamp out of range" |
 grep -v "integer out of range" |
+grep -v "bigint out of range" |
+grep -v "smallint out of range" |
 grep -v "unterminated escape sequence in LIKE" |
 grep -v "null character not permitted" |
 grep -v "is defined for numbers between" |
@@ -94,7 +99,7 @@ grep -v "dimension array or low bound array must not be null" |
 grep -v "initial position must not be null" |
 grep -v "timezone interval must not contain months or years" |
 grep -v "unrecognized configuration parameter" |
-grep -v "array_fill on text list not yet supported" |
+grep -v "array_fill on " |
 grep -v "mz_aclitem grantor cannot be PUBLIC role" |
 grep -v "is out of range for type numeric: exceeds maximum precision" |
 

@@ -238,67 +238,67 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
   else if (type->name == "integer[]")
     expr = "array[1, 2, 3, null]::integer[]";
   else if (type->name == "jsonb")
-    if (d42() == 1)
+    if (d6() == 1)
       expr = "'{}'::jsonb";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "'[]'::jsonb";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "'\"foo\"'::jsonb";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "'null'::jsonb";
     else
       expr = "'{\"1\":2,\"3\":4}'::jsonb";
   else if (type->name == "bytea")
-    if (d42() == 1)
+    if (d6() == 1)
       expr = "cast('\\000' as bytea)";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "cast('\\xFFFFFF' as bytea)";
     else
       expr = "cast('\\xDEADBEEF' as bytea)";
   else if (type->name == "uuid")
-    if (d42() == 1)
+    if (d6() == 1)
       expr = "UUID '00000000-0000-0000-0000-000000000000'";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "UUID 'ffffffff-ffff-ffff-ffff-ffffffffffff'";
     else
       expr = "UUID 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'";
   else if (type->name == "date")
-    if (d42() == 1)
+    if (d6() == 1)
       expr = "(DATE '1-11-25' - INTERVAL '4713 YEARS')";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "(DATE '62143-12-31' + INTERVAL '200000 YEARS')";
     else
       expr = "DATE '2007-02-01'";
   else if (type->name == "time")
-    if (d42() == 1)
+    if (d6() == 1)
       expr = "TIME '00:00:00'";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "TIME '23:59:60'";
     else
       expr = "TIME '01:23:45'";
   else if (type->name == "timestamp")
-    if (d42() == 1)
+    if (d6() == 1)
       expr = "(TIMESTAMP '0001-01-01 00:00:00' - INTERVAL '4714 YEARS')";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "(TIMESTAMP '95143-12-31 23:59:59' + INTERVAL '167 MILLENNIUM')";
     else
       expr = "TIMESTAMP '2023-01-01 01:23:45'";
   else if (type->name == "timestamptz")
-    if (d42() == 1)
+    if (d6() == 1)
       expr = "(TIMESTAMPTZ '0001-01-01 00:00:00+06' - INTERVAL '4714 YEARS')";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "(TIMESTAMPTZ '95143-12-31 23:59:59+06' + INTERVAL '167 MILLENNIUM')";
     else
       expr = "TIMESTAMPTZ '2023-01-01 01:23:45+06'";
   else if (type->name == "interval")
-    if (d42() == 1)
+    if (d6() == 1)
       expr = "INTERVAL '2147483647 MONTHS'";
-    else if (d42() == 1)
+    else if (d6() == 1)
       expr = "INTERVAL '-2147483648 MONTHS'";
     else
       expr = "INTERVAL '1' MINUTE";
   else
-    if (d42() == 1) {
+    if (d6() == 1) {
       if (type->name == "int2")
         expr = "-32768";
       else if (type->name == "int4")
@@ -317,7 +317,7 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
         expr = "1E-307";
       else
         expr = "cast(0 as " + type->name + ")";
-    } else if (d42() == 1) {
+    } else if (d6() == 1) {
       if (type->name == "int2")
         expr = "32767";
       else if (type->name == "int4")

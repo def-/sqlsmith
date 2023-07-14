@@ -1,4 +1,5 @@
 #include "postgres.hh"
+#include "random.hh"
 #include "config.h"
 #include <iostream>
 #include <sstream>
@@ -82,7 +83,10 @@ void dut_pqxx::test(const std::string &stmt)
     pqxx::work w(c);
     w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
     w.exec(stmt.c_str());
-    w.abort();
+    if (d6() < 4)
+      w.abort();
+    else
+      w.commit();
   } catch (const pqxx::failure &e) {
     if ((dynamic_cast<const pqxx::broken_connection *>(&e))) {
       /* re-throw to outer loop to recover session. */

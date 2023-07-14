@@ -159,8 +159,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 	            "true, " //"is_insertable_into, " # column "is_insertable_into" does not exist
 	            "table_type "
 	     "from information_schema.tables "
-       "where table_name <> 'pg_class' " // https://github.com/MaterializeInc/materialize/issues/17978
-       "and table_name not like 'mz_dataflow_operator_reachability%' " // https://github.com/MaterializeInc/materialize/issues/18296
+       "where table_name not like 'mz_dataflow_operator_reachability%' " // https://github.com/MaterializeInc/materialize/issues/18296
        );
   for (auto row = r.begin(); row != r.end(); ++row) {
     string schema(row[1].as<string>());
@@ -207,7 +206,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
 	     "from pg_attribute join pg_class c on( c.oid = attrelid ) "
 	     "join pg_namespace n on n.oid = relnamespace "
 	     "where not attisdropped "
-	     "and not (nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema') and atttypid = 18) " // https://github.com/MaterializeInc/materialize/issues/17899
+	     "and not (nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema') and atttypid = 18) " // Expected, see https://github.com/MaterializeInc/materialize/issues/17899
 	     "and attname not in "
 	     "('xmin', 'xmax', 'ctid', 'cmin', 'cmax', 'tableoid', 'oid') ");
     q += " and relname = " + w.quote(t->name);
@@ -292,15 +291,8 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND mz_functions.name <> 'list_remove' " // list_remove is unsupported
     "AND mz_functions.name <> 'concat_agg' " // concat_agg not yet supported
     "AND mz_functions.name <> 'array_in' " // array_in not yet supported
-    "AND mz_functions.name <> 'generate_series' " // https://github.com/MaterializeInc/materialize/issues/18020
-    "AND mz_functions.name <> 'jsonb_array_elements' " // https://github.com/MaterializeInc/materialize/issues/18020
-    "AND mz_functions.name <> 'jsonb_array_elements_text' " // https://github.com/MaterializeInc/materialize/issues/18020
-    "AND mz_functions.name <> 'jsonb_each' " // https://github.com/MaterializeInc/materialize/issues/18020
-    "AND mz_functions.name <> 'jsonb_each_text' " // https://github.com/MaterializeInc/materialize/issues/18020
-    "AND mz_functions.name <> 'jsonb_object_keys' " // https://github.com/MaterializeInc/materialize/issues/18020
     "AND mz_functions.name <> 'mz_row_size' " // mz_row_size requires a record type
     "AND mz_functions.name <> 'jsonb_build_object' " // argument list must have even number of elements
-    "AND mz_functions.name <> 'mz_error_if_null' " // expected, see https://github.com/MaterializeInc/materialize/issues/18036
     "AND mz_functions.name <> 'mz_now' " // https://github.com/MaterializeInc/materialize/issues/18045
     "AND NOT mz_functions.name like 'has_%_privilege' " // common "does not exist" errors
     "AND NOT mz_functions.name like 'mz_%_oid' " // common "does not exist" errors

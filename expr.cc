@@ -14,7 +14,7 @@
 using namespace std;
 using impedance::matched;
 
-shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint)
+shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint, bool can_return_set)
 {
   try {
     // ERROR:  aggregate window functions not yet supported
@@ -25,7 +25,7 @@ shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint)
     else if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
       return make_shared<nullif>(p, type_constraint);
     else if (p->level < d6() && d6() < 3)
-      return make_shared<funcall>(p, type_constraint);
+      return make_shared<funcall>(p, type_constraint, can_return_set);
     else if (p->level < d6() && d6() == 6)
       return make_shared<opcall>(p, type_constraint);
     else if (d12()==1)
@@ -39,23 +39,23 @@ shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint)
   } catch (runtime_error &e) {
   }
   p->retry();
-  return factory(p, type_constraint);
+  return factory(p, type_constraint, can_return_set);
 }
 
 case_expr::case_expr(prod *p, sqltype *type_constraint)
   : value_expr(p)
 {
   condition = bool_expr::factory(this);
-  true_expr = value_expr::factory(this, type_constraint);
-  false_expr = value_expr::factory(this, true_expr->type);
+  true_expr = value_expr::factory(this, type_constraint, false);
+  false_expr = value_expr::factory(this, true_expr->type, false);
 
   if(false_expr->type != true_expr->type) {
        /* Types are consistent but not identical.  Try to find a more
 	  concrete one for a better match. */
        if (true_expr->type->consistent(false_expr->type))
-	    true_expr = value_expr::factory(this, false_expr->type);
+	    true_expr = value_expr::factory(this, false_expr->type, false);
        else 
-	    false_expr = value_expr::factory(this, true_expr->type);
+	    false_expr = value_expr::factory(this, true_expr->type, false);
   }
   type = true_expr->type;
 }
@@ -151,32 +151,32 @@ comparison_op::comparison_op(prod *p) : bool_binop(p)
   auto iters = idx.equal_range(scope->schema->booltype);
   oper = random_pick(random_pick(iters)->second);
 
-  lhs = value_expr::factory(this, oper->left);
-  rhs = value_expr::factory(this, oper->right);
+  lhs = value_expr::factory(this, oper->left, false);
+  rhs = value_expr::factory(this, oper->right, false);
 
   if (oper->left == oper->right
 	 && lhs->type != rhs->type) {
 
     if (lhs->type->consistent(rhs->type))
-      lhs = value_expr::factory(this, rhs->type);
+      lhs = value_expr::factory(this, rhs->type, false);
     else
-      rhs = value_expr::factory(this, lhs->type);
+      rhs = value_expr::factory(this, lhs->type, false);
   }
 }
 
 coalesce::coalesce(prod *p, sqltype *type_constraint, const char *abbrev)
      : value_expr(p), abbrev_(abbrev)
 {
-  auto first_expr = value_expr::factory(this, type_constraint);
-  auto second_expr = value_expr::factory(this, first_expr->type);
+  auto first_expr = value_expr::factory(this, type_constraint, false);
+  auto second_expr = value_expr::factory(this, first_expr->type, false);
 
   retry_limit = 20;
   while(first_expr->type != second_expr->type) {
     retry();
     if (first_expr->type->consistent(second_expr->type))
-      first_expr = value_expr::factory(this, second_expr->type);
+      first_expr = value_expr::factory(this, second_expr->type, false);
     else 
-      second_expr = value_expr::factory(this, first_expr->type);
+      second_expr = value_expr::factory(this, first_expr->type, false);
   }
   type = second_expr->type;
 
@@ -341,13 +341,17 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
     }
 }
 
-funcall::funcall(prod *p, sqltype *type_constraint, bool agg)
+funcall::funcall(prod *p, sqltype *type_constraint, bool can_return_set, bool agg)
   : value_expr(p), is_aggregate(agg)
 {
   //if (type_constraint == scope->schema->internaltype)
   //  fail("cannot call functions involving internal type");
 
+  // TODO: pick can_return_set here
   auto &idx = agg ? p->scope->schema->aggregates_returning_type
+    : !can_return_set ?
+      (4 < d6()) ? p->scope->schema->routines_returning_type_without_returns_set
+      : p->scope->schema->parameterless_routines_returning_type_without_returns_set
     : (4 < d6()) ?
     p->scope->schema->routines_returning_type
     : p->scope->schema->parameterless_routines_returning_type;
@@ -389,7 +393,7 @@ funcall::funcall(prod *p, sqltype *type_constraint, bool agg)
   
   for (auto argtype : proc->argtypes) {
     assert(argtype);
-    auto expr = value_expr::factory(this, argtype);
+    auto expr = value_expr::factory(this, argtype, false);
     parms.push_back(expr);
   }
 }
@@ -430,9 +434,9 @@ opcall::opcall(prod *p, sqltype *type_constraint)
   else
     type = oper->result;
 
-  rhs = value_expr::factory(this, oper->right);
+  rhs = value_expr::factory(this, oper->right, false);
   if (oper->left) {
-    lhs = value_expr::factory(this, oper->left);
+    lhs = value_expr::factory(this, oper->left, false);
   }
   assert(oper->right);
   assert(oper->result);

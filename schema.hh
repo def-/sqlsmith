@@ -31,8 +31,10 @@ struct schema {
   typedef std::multimap<typekey, op>::iterator op_iterator;
 
   std::map<sqltype*, std::vector<routine*>>  routines_returning_type;
+  std::map<sqltype*, std::vector<routine*>>  routines_returning_type_without_returns_set;
   std::map<sqltype*, std::vector<routine*>>  aggregates_returning_type;
   std::map<sqltype*, std::vector<routine*>>  parameterless_routines_returning_type;
+  std::map<sqltype*, std::vector<routine*>>  parameterless_routines_returning_type_without_returns_set;
   std::map<sqltype*, std::vector<table*>> tables_with_columns_of_type;
   std::map<sqltype*, std::vector<op*>> operators_returning_type;
   std::map<sqltype*, std::vector<sqltype*>> concrete_type;

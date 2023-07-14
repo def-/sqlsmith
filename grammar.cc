@@ -225,7 +225,7 @@ from_clause::from_clause(prod *p) : prod(p) {
 select_list::select_list(prod *p) : prod(p)
 {
   do {
-    shared_ptr<value_expr> e = value_expr::factory(this);
+    shared_ptr<value_expr> e = value_expr::factory(this, nullptr, true);
     value_exprs.push_back(e);
     ostringstream name;
     name << "c" << columns++;
@@ -390,7 +390,7 @@ insert_stmt::insert_stmt(prod *p, struct scope *s, table *v)
   match();
 
   for (auto col : victim->columns()) {
-    auto expr = value_expr::factory(this, col.type);
+    auto expr = value_expr::factory(this, col.type, false);
     assert(expr->type == col.type);
     value_exprs.push_back(expr);
   }
@@ -424,7 +424,7 @@ set_list::set_list(prod *p, table *target) : prod(p)
     for (auto col : target->columns()) {
       if (d6() < 4)
 	continue;
-      auto expr = value_expr::factory(this, col.type);
+      auto expr = value_expr::factory(this, col.type, false);
       value_exprs.push_back(expr);
       names.push_back(col.name);
     }
@@ -664,7 +664,7 @@ when_clause_insert::when_clause_insert(struct merge_stmt *p)
   : when_clause(p)
 {
   for (auto col : p->victim->columns()) {
-    auto expr = value_expr::factory(this, col.type);
+    auto expr = value_expr::factory(this, col.type, false);
     assert(expr->type == col.type);
     exprs.push_back(expr);
   }

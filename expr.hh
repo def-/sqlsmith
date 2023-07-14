@@ -16,7 +16,7 @@ struct value_expr: prod {
   virtual void out(std::ostream &out) = 0;
   virtual ~value_expr() { }
   value_expr(prod *p) : prod(p) { }
-  static shared_ptr<value_expr> factory(prod *p, sqltype *type_constraint = 0);
+  static shared_ptr<value_expr> factory(prod *p, sqltype *type_constraint, bool can_return_set);
 };
 
 struct case_expr : value_expr {
@@ -34,7 +34,7 @@ struct funcall : value_expr {
   vector<shared_ptr<value_expr> > parms;
   virtual void out(std::ostream &out);
   virtual ~funcall() { }
-  funcall(prod *p, sqltype *type_constraint = 0, bool agg = 0);
+  funcall(prod *p, sqltype *type_constraint = 0, bool can_return_set = false, bool agg = false);
   virtual void accept(prod_visitor *v) {
     v->visit(this);
     for (auto p : parms)
@@ -125,7 +125,7 @@ struct null_predicate : bool_expr {
   shared_ptr<value_expr> expr;
   null_predicate(prod *p) : bool_expr(p) {
     negate = ((d6()<4) ? "not " : "");
-    expr = value_expr::factory(this);
+    expr = value_expr::factory(this, nullptr, false);
   }
   virtual void out(std::ostream &out) {
     out << *expr << " is " << negate << "NULL";

@@ -111,7 +111,6 @@ grep -v "CAST does not support casting from" | # random nulls
 # Functions returning sets:
 grep -v "number of columns must be a positive integer literal" |
 grep -v "regex_extract requires a string literal as its first argument" |
-grep -v "table functions are not allowed in" | # TODO: Happens often with returns_set functions, refine SQLsmith to only add them in top level
 grep -v -E "column \".*\" does not exist" | # https://github.com/MaterializeInc/materialize/issues/20533
 
 grep -v "Expected joined table, found" | # Should fix for multi table join

@@ -22,9 +22,14 @@ void schema::generate_indexes() {
     for(auto &r: routines) {
       if (!type->consistent(r.restype))
 	continue;
+      if (!r.returns_set)
+        routines_returning_type_without_returns_set[type].push_back(&r);
       routines_returning_type[type].push_back(&r);
-      if(!r.argtypes.size())
-	      parameterless_routines_returning_type[type].push_back(&r);
+      if(!r.argtypes.size()) {
+        if (!r.returns_set)
+          parameterless_routines_returning_type_without_returns_set[type].push_back(&r);
+        parameterless_routines_returning_type[type].push_back(&r);
+      }
     }
     
     for (auto &t: tables) {

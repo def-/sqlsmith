@@ -82,6 +82,7 @@ void dut_pqxx::test(const std::string &stmt)
   try {
     pqxx::work w(c);
     w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
+    //w.exec("SET CLUSTER_REPLICA = default.r1");
     w.exec(stmt.c_str());
     if (d6() < 4)
       w.abort();

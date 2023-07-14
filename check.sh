@@ -102,10 +102,17 @@ grep -v "unrecognized configuration parameter" |
 grep -v "array_fill on " |
 grep -v "mz_aclitem grantor cannot be PUBLIC role" |
 grep -v "is out of range for type numeric: exceeds maximum precision" |
+grep -v "requested length too large" |
 
 grep -v "operator is not unique" | # random nulls
 grep -v "cannot be matched" | # random nulls
 grep -v "CAST does not support casting from" | # random nulls
+
+# Functions returning sets:
+grep -v "number of columns must be a positive integer literal" |
+grep -v "regex_extract requires a string literal as its first argument" |
+grep -v "table functions are not allowed in" | # TODO: Happens often with returns_set functions, refine SQLsmith to only add them in top level
+grep -v -E "column \".*\" does not exist" | # https://github.com/MaterializeInc/materialize/issues/20533
 
 grep -v "Expected joined table, found" | # Should fix for multi table join
 grep -v "Expected ON, or USING after JOIN, found" | # Should fix for multi table join

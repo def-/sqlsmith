@@ -130,8 +130,9 @@ struct routine {
   vector<sqltype *> argtypes;
   sqltype *restype;
   string name;
-  routine(string schema, string specific_name, sqltype* data_type, string name)
-    : specific_name(specific_name), schema(schema), restype(data_type), name(name) {
+  bool returns_set;
+  routine(string schema, string specific_name, sqltype* data_type, string name, bool returns_set=false)
+    : specific_name(specific_name), schema(schema), restype(data_type), name(name), returns_set(returns_set) {
     assert(data_type);
   }
   virtual string ident() {

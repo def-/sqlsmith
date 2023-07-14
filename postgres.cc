@@ -363,6 +363,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND NOT (mz_functions.name in ('sum', 'avg') AND ret_type.oid = 1186) " // https://github.com/MaterializeInc/materialize/issues/18043
     "AND mz_functions.name <> 'array_agg' " // https://github.com/MaterializeInc/materialize/issues/18044
     "AND NOT mz_functions.name in ('mz_all', 'mz_any') " // https://github.com/MaterializeInc/materialize/issues/18057
+    "AND mz_functions.name <> 'csv_extract' " // https://github.com/MaterializeInc/materialize/issues/20545
     "AND " + procedure_is_aggregate + " AND NOT " + procedure_is_window);
   for (auto row : r) {
     routine proc(row[0].as<string>(),

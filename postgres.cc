@@ -299,7 +299,6 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo)
     "AND NOT mz_functions.name like 'mz_%_oid' " // common "does not exist" errors
     "AND mz_functions.name <> 'mz_global_id_to_name' " // common "does not exist" errors
     "AND mz_functions.name <> 'date_bin_hopping' " // the date_bin_hopping function is not supported
-    "AND mz_functions.name <> 'csv_extract' " // https://github.com/MaterializeInc/materialize/issues/20545
     "AND NOT (" + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
   for (auto row : r) {

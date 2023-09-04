@@ -716,6 +716,7 @@ shared_ptr<when_clause> when_clause::factory(struct merge_stmt *p)
 void explain_stmt::out(std::ostream &out) {
   out << "explain ";
   bool for_supported = true;
+  bool with_supported = true;
   switch(d6()) {
   case 1:
     for_supported = false;
@@ -734,9 +735,10 @@ void explain_stmt::out(std::ostream &out) {
     break;
   case 6:
     out << "timestamp ";
+    with_supported = false;
     break;
   }
-  if(d6() > 2) {
+  if(with_supported && d6() > 2) {
     out << "with (";
     switch(d6()) {
     case 1:

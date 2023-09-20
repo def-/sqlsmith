@@ -87,6 +87,7 @@ grep -v "is defined for numbers between" |
 grep -v "field position must be greater than zero" |
 grep -v "must appear in the GROUP BY clause or be used in an aggregate function" |
 grep -v "pg_cancel_backend in this position not yet supported" |
+grep -v "csv_extract number of columns too large" |
 #grep -v "internal error: role " |
 #grep -v "internal error: schema " |
 #grep -v "internal error: object " |

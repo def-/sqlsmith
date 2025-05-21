@@ -323,7 +323,7 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
   else if (type->name[0] == '_')
     expr = "array[null, null]::" + type->name.substr(1, type->name.size()) + "[]";
   else
-    if (d6() == 1) {
+    if (d6() < 4) {
       if (type->name == "int2")
         expr = "-32768::int2";
       else if (type->name == "int4")
@@ -337,12 +337,12 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
       else if (type->name == "uint8")
         expr = "0::uint8";
       else if (type->name == "float4")
-        expr = "1E-37::float4";
+        expr = "'inf'::float4";
       else if (type->name == "float8")
-        expr = "'1E-307'::float8";
+        expr = "'inf'::float8";
       else
         expr = "cast(0 as " + type->name + ")";
-    } else if (d6() == 1) {
+    } else if (d6() < 4) {
       if (type->name == "int2")
         expr = "32767::int2";
       else if (type->name == "int4")
@@ -356,9 +356,9 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
       else if (type->name == "uint8")
         expr = "18446744073709551615::uint8";
       else if (type->name == "float4")
-        expr = "1E+37::float4";
+        expr = "'nan'::float4";
       else if (type->name == "float8")
-        expr = "'1E+307'::float8";
+        expr = "'nan'::float8";
       else
         expr = "1::" + type->name;
     } else if (d6() == 1) {

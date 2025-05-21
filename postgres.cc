@@ -85,7 +85,6 @@ void dut_pqxx::test(const std::string &stmt)
   try {
     pqxx::work w(c);
     w.exec("SET TRANSACTION_ISOLATION TO 'SERIALIZABLE'");
-    //w.exec("SET CLUSTER_REPLICA = default.r1");
     w.exec(stmt.c_str());
     if (d6() < 4)
       w.abort();
@@ -334,6 +333,8 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "WHERE array_length(mz_operators.argument_type_ids, 1) = 2 "
       "AND mz_operators.name <> '<@' " // type system insufficient
       "AND mz_operators.name <> '@>' " // type system insufficient
+      "AND mz_operators.name <> '<<' " // unknown operator for uint
+      "AND mz_operators.name <> '>>' " // unknown operator for uint
       "UNION SELECT "
       "mz_operators.name AS oprname, "
       "0 as oprleft, "
@@ -342,7 +343,8 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "FROM mz_catalog.mz_operators "
       "JOIN mz_catalog.mz_types AS ret_type ON mz_operators.return_type_id = ret_type.id "
       "JOIN mz_catalog.mz_types AS right_type ON mz_operators.argument_type_ids[1] = right_type.id "
-      "WHERE array_length(mz_operators.argument_type_ids, 1) = 1");
+      "WHERE array_length(mz_operators.argument_type_ids, 1) = 1 "
+      );
 
     if (dump_state) {
       data["operators"] = json::array();
@@ -417,6 +419,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "AND (mz_functions.name <> 'sum' OR mz_functions.return_type_id <> (select id from mz_types where name = 'interval'))" // sum(interval) not yet supported, see https://github.com/MaterializeInc/materialize/issues/18043
       "AND (mz_functions.name <> 'timezone' OR mz_functions.argument_type_ids[2] <> (select id from mz_types where name = 'time'))" // timezone with time type is intentionally not supported, see https://github.com/MaterializeInc/materialize/pull/22960
       "AND mz_functions.name <> 'pretty_sql' " // Expected a keyword at the beginning of a statement, found ...
+      "AND mz_functions.name <> 'map_build' " // map_build(text list) does not exist
       "AND NOT (" + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
     if (dump_state) {
@@ -520,7 +523,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "AND NOT (mz_functions.name in ('sum', 'avg', 'avg_internal_v1') AND ret_type.oid = 1186) " // https://github.com/MaterializeInc/materialize/issues/18043
       "AND mz_functions.name <> 'array_agg' " // https://github.com/MaterializeInc/materialize/issues/18044
       "AND NOT (mz_functions.name = 'string_agg' AND ret_type.oid = 17) " // string_agg on BYTEA not yet supported
-      "AND NOT mz_functions.name in ('mz_all', 'mz_any') " // https://github.com/MaterializeInc/materialize/issues/18057
+      "AND NOT (mz_functions.name in ('mz_any', 'mz_all')) " // https://github.com/MaterializeInc/database-issues/issues/9298
       "AND " + procedure_is_aggregate + " AND NOT " + procedure_is_window);
     for (auto row : r) {
       routine proc(row[0].as<string>(),

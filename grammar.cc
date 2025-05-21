@@ -255,10 +255,6 @@ void query_spec::out(std::ostream &out) {
   indent(out);
   out << "where ";
   out << *search;
-  indent(out);
-  out << "limit coalesce(";
-  out << *limit;
-  out << ", " << d100() + d100() << ")";
 }
 
 struct for_update_verify : prod_visitor {
@@ -327,15 +323,12 @@ query_spec::query_spec(prod *p, struct scope *s, bool lateral) :
   if (lateral)
     scope->refs = s->refs;
 
-  limit = value_expr::factory(this, scope->schema->inttype, false);
-  
   from_clause = make_shared<struct from_clause>(this);
   select_list = make_shared<struct select_list>(this);
   
   set_quantifier = (d100() == 1) ? "distinct" : "";
 
   search = bool_expr::factory(this);
-  //limit = make_shared<column_reference>(this, scope->schema->inttype);
 }
 
 long prepare_stmt::seq;

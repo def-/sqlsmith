@@ -225,7 +225,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       string db(row[2].as<string>());
       string table_type(row[3].as<string>());
 
-      if (no_catalog && ((schema == "pg_catalog") || (schema == "mz_catalog") || (schema == "mz_internal") || (schema == "information_schema")))
+      if (no_catalog && ((schema == "pg_catalog") || (schema == "mz_catalog") || (schema == "mz_internal") || (schema == "information_schema") || (schema == "mz_introspection")))
         continue;
 
       tables.push_back(table(w.quote_name(name),
@@ -270,7 +270,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
                "from pg_attribute join pg_class c on( c.oid = attrelid ) "
                "join pg_namespace n on n.oid = relnamespace "
                "where not attisdropped "
-               "and not (nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema') and atttypid = 18) " // Expected, see https://github.com/MaterializeInc/materialize/issues/17899
+               "and not (nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema', 'mz_introspection') and atttypid = 18) " // Expected, see https://github.com/MaterializeInc/materialize/issues/17899
                "and attname not in "
                "('xmin', 'xmax', 'ctid', 'cmin', 'cmax', 'tableoid', 'oid') ");
       q += " and relname = " + w.quote(t->name);
@@ -593,7 +593,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
 #ifdef HAVE_LIBPQXX7
   c.close();
 #else
-  c.disconnect();
+  //c.disconnect();
 #endif
 
   if (dump_state) {

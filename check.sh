@@ -52,6 +52,7 @@ grep -v "range lower bound must be less than or equal to range upper bound" |
 grep -v "length must be nonnegative" |
 grep -v "is only defined for finite arguments" |
 grep -v "more than one record produced in subquery" |
+grep -v "invalid IANA Time Zone Database identifier" |
 grep -v "invalid range bound flags" |
 grep -v "invalid input syntax for type jsonb" |
 grep -v "invalid regular expression" |
@@ -133,6 +134,7 @@ grep -v "cannot reference pseudo type" | # https://github.com/MaterializeInc/mat
 grep -v "Invalid data in source, saw retractions" | # https://github.com/MaterializeInc/materialize/issues/17874
 #grep -v "internal error: unimplemented join" | # https://github.com/MaterializeInc/materialize/issues/17897
 grep -v "' not recognized" | # https://github.com/MaterializeInc/materialize/issues/17981
+grep -v "Evaluation error: unit '" | # https://github.com/MaterializeInc/materialize/issues/17981
 grep -v "internal error: Invalid data in source, saw negative accumulation for key" | # https://github.com/MaterializeInc/materialize/issues/17509
 grep -v "internal transform error: scalar types do not match" | # https://github.com/MaterializeInc/materialize/issues/18023
 grep -v "array_agg on arrays not yet supported" | # https://github.com/MaterializeInc/materialize/issues/18044
@@ -160,4 +162,8 @@ grep -v "timestamp cannot be NaN" |
 grep -v "regexp_extract must specify at least one capture group" |
 grep -v "nested aggregate functions are not allowed" |
 grep -v "materialized view objects cannot depend on log sources" | # TODO: This occurs often!
+grep -v "Unsupported binary temporal operation" |
+grep -v "internal transform error: unexpected panic during query optimization: The fast_path_optimizer shouldn't make a fast path plan slow path." | # TODO: https://github.com/MaterializeInc/database-issues/issues/9645
+grep -v "internal transform error: unexpected panic during query optimization: Window function performance issue:" | # TODO: https://github.com/MaterializeInc/database-issues/issues/9644
+grep -v "key cannot be null" |
 sort | uniq -c | sort -n

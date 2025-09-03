@@ -192,7 +192,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
     for (const auto &obj : data["tables"]) {
       string schema = obj["schema"].get<string>();
       string db = obj["db"].get<string>();
-      if (no_catalog && ((schema == "pg_catalog") || (schema == "mz_catalog") || (schema == "mz_internal") || (schema == "information_schema")))
+      if (no_catalog && ((schema == "pg_catalog") || (schema == "mz_catalog") || (schema == "mz_internal") || (schema == "information_schema") || (schema == "mz_introspection")))
         continue;
 
       tables.push_back(table(w.quote_name(obj["name"].get<string>()),
@@ -408,7 +408,6 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "AND NOT mz_functions.name in ('aclitemin', 'boolin', 'bpcharin', 'byteain', 'charin', 'float4in', 'float8in', 'int2in', 'int2vectorin', 'int4in', 'int8in', 'namein', 'oidin', 'regclassin', 'regprocin', 'regtypein', 'textin', 'varcharin') " // all in functions are not yet supported, but don't exclude functions like 'min', 'sin', date_bin', so better keep an explicit list
       "AND mz_functions.name <> 'mz_row_size' " // mz_row_size requires a record type
       "AND mz_functions.name <> 'jsonb_build_object' " // argument list must have even number of elements
-      "AND mz_functions.name <> 'mz_now' " // https://github.com/MaterializeInc/materialize/issues/18045
       "AND NOT mz_functions.name like 'has_%_privilege' " // common "does not exist" errors
       "AND NOT mz_functions.name like 'mz_%_oid' " // common "does not exist" errors
       "AND mz_functions.name <> 'mz_global_id_to_name' " // common "does not exist" errors

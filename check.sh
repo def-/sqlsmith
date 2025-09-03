@@ -152,4 +152,12 @@ grep -v "window functions are not allowed in table function arguments" |
 grep -v "window functions are not allowed in OR argument" |
 grep -v "window functions are not allowed in AND argument" |
 grep -v "LIMIT must not be negative" |
+grep -v "window functions are not allowed in" |
+grep -v "aggregate functions are not allowed in" |
+grep -v "internal transform error: exceeded recursion limit of" |
+grep -v "attempt to create relation with too many columns" |
+grep -v "timestamp cannot be NaN" |
+grep -v "regexp_extract must specify at least one capture group" |
+grep -v "nested aggregate functions are not allowed" |
+grep -v "materialized view objects cannot depend on log sources" | # TODO: This occurs often!
 sort | uniq -c | sort -n

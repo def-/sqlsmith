@@ -26,7 +26,6 @@ bool pg_type::consistent(sqltype *rvalue)
   pg_type *t = dynamic_cast<pg_type*>(rvalue);
 
   if (!t) {
-    cerr << "unknown type: " << rvalue->name  << endl;
     return false;
   }
 
@@ -191,7 +190,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
   if (read_state && !dump_state) {
     for (const auto &obj : data["tables"]) {
       string schema = obj["schema"].get<string>();
-      string db = obj["db"].get<string>();
+      string db = obj.contains("db") ? obj["db"].get<string>() : "";
       if (no_catalog && ((schema == "pg_catalog") || (schema == "mz_catalog") || (schema == "mz_internal") || (schema == "information_schema") || (schema == "mz_introspection")))
         continue;
 
@@ -254,7 +253,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
     // Reread table data since it might have changed
     if (read_state && !dump_state) {
       for (const auto &obj : data["tables"][table_index]["columns"]) {
-        column c(obj["name"].get<string>(), oid2type[obj["type"].get<OID>()]);
+        sqltype *coltype = oid2type[obj["type"].get<OID>()];
+        if (!coltype) continue;
+        column c(obj["name"].get<string>(), coltype);
         t->columns().push_back(c);
       }
       for (const auto &obj : data["tables"][table_index]["constraints"]) {
@@ -278,7 +279,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
 
       r = w.exec(q);
       for (auto row : r) {
-        column c(w.quote_name(row[0].as<string>()), oid2type[row[1].as<OID>()]);
+        sqltype *coltype = oid2type[row[1].as<OID>()];
+        if (!coltype) continue;
+        column c(w.quote_name(row[0].as<string>()), coltype);
         t->columns().push_back(c);
 
         if (dump_state) {
@@ -311,10 +314,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
 
   if (read_state) {
     for (const auto &obj : data["operators"]) {
-      op o(obj["name"].get<string>(),
-           oid2type[obj["left_type"].get<OID>()],
-           oid2type[obj["right_type"].get<OID>()],
-           oid2type[obj["return_type"].get<OID>()]);
+      sqltype *lt = oid2type[obj["left_type"].get<OID>()];
+      sqltype *rt = oid2type[obj["right_type"].get<OID>()];
+      sqltype *rest = oid2type[obj["return_type"].get<OID>()];
+      if (!rt || !rest) continue;  // left can be null for unary ops
+      op o(obj["name"].get<string>(), lt, rt, rest);
       register_operator(o);
     }
   } else {
@@ -350,10 +354,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       data["operators"] = json::array();
     }
     for (auto row : r) {
-      op o(row[0].as<string>(),
-           oid2type[row[1].as<OID>()],
-           oid2type[row[2].as<OID>()],
-           oid2type[row[3].as<OID>()]);
+      sqltype *lt = oid2type[row[1].as<OID>()];
+      sqltype *rt = oid2type[row[2].as<OID>()];
+      sqltype *rest = oid2type[row[3].as<OID>()];
+      if (!rt || !rest) continue;  // left can be null for unary ops
+      op o(row[0].as<string>(), lt, rt, rest);
       register_operator(o);
 
       if (dump_state) {
@@ -372,9 +377,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
   cerr << "Loading routines...";
   if (read_state) {
     for (const auto &obj : data["routines"]) {
+      sqltype *restype = oid2type[obj["return_type"].get<OID>()];
+      if (!restype) continue;
       routine proc(obj["schema_name"].get<string>(),
                    obj["oid"].get<string>(),
-                   oid2type[obj["return_type"].get<OID>()],
+                   restype,
                    obj["name"].get<string>(),
                    obj["returns_set"].get<bool>());
       register_routine(proc);
@@ -425,9 +432,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       data["routines"] = json::array();
     }
     for (auto row : r) {
+      sqltype *restype = oid2type[row[2].as<long>()];
+      if (!restype) continue;
       routine proc(row[0].as<string>(),
                    row[1].as<string>(),
-                   oid2type[row[2].as<long>()],
+                   restype,
                    row[3].as<string>(),
                    row[4].as<bool>());
       register_routine(proc);
@@ -452,7 +461,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
   for (auto &proc : routines) {
     if (read_state) {
       for (const auto &obj : data["routines"][routine_index]["parameters"]) {
-          proc.argtypes.push_back(oid2type[obj.get<OID>()]);
+          sqltype *t = oid2type[obj.get<OID>()];
+          if (!t) { proc.argtypes.clear(); break; }
+          proc.argtypes.push_back(t);
       }
     } else {
       // unnest is broken: https://github.com/MaterializeInc/materialize/issues/17979
@@ -479,7 +490,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
             oid = r2[0][0].as<OID>();
           }
           sqltype *t = oid2type[oid];
-          assert(t);
+          if (!t) {
+            // Unknown type OID, skip this routine
+            proc.argtypes.clear();
+            break;
+          }
           proc.argtypes.push_back(t);
           if (dump_state) {
             data["routines"][routine_index]["parameters"].push_back(oid);
@@ -494,9 +509,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
   cerr << "Loading aggregates...";
   if (read_state) {
     for (const auto &obj : data["aggregates"]) {
+      sqltype *restype = oid2type[obj["return_type"].get<OID>()];
+      if (!restype) continue;
       routine proc(obj["schema_name"].get<string>(),
                    obj["oid"].get<string>(),
-                   oid2type[obj["return_type"].get<OID>()],
+                   restype,
                    obj["name"].get<string>(),
                    obj["returns_set"].get<bool>());
       register_aggregate(proc);
@@ -525,9 +542,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "AND NOT (mz_functions.name in ('mz_any', 'mz_all')) " // https://github.com/MaterializeInc/database-issues/issues/9298
       "AND " + procedure_is_aggregate + " AND NOT " + procedure_is_window);
     for (auto row : r) {
+      sqltype *restype = oid2type[row[2].as<long>()];
+      if (!restype) continue;
       routine proc(row[0].as<string>(),
                    row[1].as<string>(),
-                   oid2type[row[2].as<long>()],
+                   restype,
                    row[3].as<string>(),
                    row[4].as<bool>());
       register_aggregate(proc);
@@ -554,7 +573,9 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
     //string q("select (select oid from mz_types where a = id) from mz_functions, lateral unnest(argument_type_ids) as a where oid = ");
     if (read_state) {
       for (const auto &obj : data["aggregates"][aggregate_index]["parameters"]) {
-          proc.argtypes.push_back(oid2type[obj.get<OID>()]);
+          sqltype *t = oid2type[obj.get<OID>()];
+          if (!t) { proc.argtypes.clear(); break; }
+          proc.argtypes.push_back(t);
       }
     } else {
       string q("select array_to_string(argument_type_ids, ',') from mz_functions where oid = ");
@@ -579,7 +600,11 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
             oid = r2[0][0].as<OID>();
           }
           sqltype *t = oid2type[oid];
-          assert(t);
+          if (!t) {
+            // Unknown type OID, skip this aggregate
+            proc.argtypes.clear();
+            break;
+          }
           proc.argtypes.push_back(t);
           if (dump_state) {
             data["aggregates"][aggregate_index]["parameters"].push_back(oid);

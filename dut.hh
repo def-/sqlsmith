@@ -13,29 +13,26 @@ namespace dut {
 struct failure : public std::exception {
   std::string errstr;
   std::string sqlstate;
-  const char* what() const throw()
+  const char* what() const noexcept override
   {
     return errstr.c_str();
   }
-  failure(const char *s, const char *sqlstate_ = "") throw()
-       : errstr(), sqlstate() {
-    errstr = s;
-    sqlstate = sqlstate_;
-  };
+  failure(const char *s, const char *sqlstate_ = "")
+       : errstr(s), sqlstate(sqlstate_) { }
 };
 
 struct broken : failure {
-  broken(const char *s, const char *sqlstate_ = "") throw()
+  broken(const char *s, const char *sqlstate_ = "")
     : failure(s, sqlstate_) { }
 };
 
 struct timeout : failure {
-  timeout(const char *s, const char *sqlstate_ = "") throw()
+  timeout(const char *s, const char *sqlstate_ = "")
     : failure(s, sqlstate_) { }
 };
 
 struct syntax : failure {
-  syntax(const char *s, const char *sqlstate_ = "") throw()
+  syntax(const char *s, const char *sqlstate_ = "")
     : failure(s, sqlstate_) { }
 };
 

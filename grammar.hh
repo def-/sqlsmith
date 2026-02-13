@@ -134,6 +134,17 @@ struct query_spec : prod {
   shared_ptr<struct from_clause> from_clause;
   shared_ptr<struct select_list> select_list;
   shared_ptr<bool_expr> search;
+  bool has_group_by = false;
+  std::vector<shared_ptr<column_reference>> group_by_cols;
+  shared_ptr<bool_expr> having;
+  bool has_order_by = false;
+  std::vector<shared_ptr<column_reference>> order_by_cols;
+  bool has_limit = false;
+  int limit_val = 0;
+  bool has_offset = false;
+  int offset_val = 0;
+  bool has_distinct_on = false;
+  std::vector<shared_ptr<column_reference>> distinct_on_cols;
   struct scope myscope;
   virtual void out(std::ostream &out);
   query_spec(prod *p, struct scope *s, bool lateral = 0);
@@ -142,6 +153,10 @@ struct query_spec : prod {
     select_list->accept(v);
     from_clause->accept(v);
     search->accept(v);
+    for (auto &c : group_by_cols) c->accept(v);
+    if (having) having->accept(v);
+    for (auto &c : order_by_cols) c->accept(v);
+    for (auto &c : distinct_on_cols) c->accept(v);
   }
 };
 
@@ -346,6 +361,196 @@ struct common_table_expression : prod {
   virtual void out(std::ostream &out);
   virtual void accept(prod_visitor *v);
   common_table_expression(prod *parent, struct scope *s);
+};
+
+struct values_expr : table_ref {
+  int num_rows;
+  int num_cols;
+  std::vector<std::vector<shared_ptr<value_expr>>> rows;
+  relation derived_table;
+  values_expr(prod *p);
+  virtual ~values_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    for (auto &row : rows)
+      for (auto &e : row)
+        e->accept(v);
+  }
+};
+
+struct table_func_ref : table_ref {
+  std::string func_call;
+  std::string col_alias;
+  relation derived_table;
+  table_func_ref(prod *p);
+  virtual ~table_func_ref() { }
+  virtual void out(std::ostream &out);
+};
+
+struct set_operation : prod {
+  std::string op_type;
+  shared_ptr<query_spec> lhs;
+  shared_ptr<query_spec> rhs;
+  struct scope myscope;
+  set_operation(prod *p, struct scope *s);
+  virtual ~set_operation() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    lhs->accept(v);
+    rhs->accept(v);
+  }
+};
+
+struct subscribe_stmt : prod {
+  shared_ptr<query_spec> query;
+  struct scope myscope;
+  subscribe_stmt(prod *p, struct scope *s);
+  virtual ~subscribe_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    query->accept(v);
+  }
+};
+
+struct recursive_cte : prod {
+  shared_ptr<query_spec> base_query;
+  shared_ptr<query_spec> final_query;
+  std::string cte_name;
+  relation cte_relation;
+  shared_ptr<aliased_relation> cte_ref;
+  struct scope myscope;
+  struct scope inner_scope;
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v);
+  recursive_cte(prod *parent, struct scope *s);
+};
+
+struct create_mat_view_stmt : prod {
+  shared_ptr<query_spec> query;
+  std::string view_name;
+  struct scope myscope;
+  static long seq;
+  create_mat_view_stmt(prod *p, struct scope *s);
+  virtual ~create_mat_view_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    query->accept(v);
+  }
+};
+
+struct create_view_stmt : prod {
+  shared_ptr<query_spec> query;
+  std::string view_name;
+  struct scope myscope;
+  static long seq;
+  create_view_stmt(prod *p, struct scope *s);
+  virtual ~create_view_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    query->accept(v);
+  }
+};
+
+struct create_index_stmt : prod {
+  std::string index_name;
+  named_relation *target;
+  std::vector<std::string> columns;
+  struct scope myscope;
+  static long seq;
+  create_index_stmt(prod *p, struct scope *s);
+  virtual ~create_index_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+  }
+};
+
+struct create_table_stmt : prod {
+  std::string table_name;
+  std::vector<std::pair<std::string, std::string>> col_defs;
+  struct scope myscope;
+  static long seq;
+  create_table_stmt(prod *p, struct scope *s);
+  virtual ~create_table_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+  }
+};
+
+struct create_type_stmt : prod {
+  std::string type_name;
+  std::string type_def;
+  struct scope myscope;
+  static long seq;
+  create_type_stmt(prod *p, struct scope *s);
+  virtual ~create_type_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+  }
+};
+
+struct drop_stmt : prod {
+  std::string object_type;
+  std::string object_name;
+  drop_stmt(prod *p, struct scope *s);
+  virtual ~drop_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+  }
+};
+
+struct alter_rename_stmt : prod {
+  std::string object_type;
+  std::string old_name;
+  std::string new_name;
+  alter_rename_stmt(prod *p, struct scope *s);
+  virtual ~alter_rename_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+  }
+};
+
+struct grant_revoke_stmt : prod {
+  bool is_grant;
+  std::string privilege;
+  std::string object_type;
+  std::string object_name;
+  grant_revoke_stmt(prod *p, struct scope *s);
+  virtual ~grant_revoke_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+  }
+};
+
+struct set_stmt : prod {
+  std::string param_name;
+  std::string param_value;
+  set_stmt(prod *p, struct scope *s);
+  virtual ~set_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+  }
+};
+
+struct show_stmt : prod {
+  std::string target;
+  show_stmt(prod *p, struct scope *s);
+  virtual ~show_stmt() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+  }
 };
 
 #endif

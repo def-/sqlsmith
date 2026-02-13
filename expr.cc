@@ -19,11 +19,13 @@ shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint, bo
   try {
     if (1 == d20() && p->level < d6() && window_function::allowed(p))
       return make_shared<window_function>(p, type_constraint);
+    if (1 == d20() && p->level < d6() && dedicated_window_func::allowed(p))
+      return make_shared<dedicated_window_func>(p, type_constraint);
     if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
       return make_shared<coalesce>(p, type_constraint);
     else if (1 == d42() && p->level < d6() && type_constraint && type_constraint->name.rfind("list", 0) != 0 && type_constraint->name.rfind("map", 0) != 0 && type_constraint->name.rfind("record", 0) != 0 && type_constraint->name.rfind("any", 0) != 0)
       return make_shared<nullif>(p, type_constraint);
-    else if (p->level < d6() && d6() < 3)
+    if (p->level < d6() && d6() < 3)
       return make_shared<funcall>(p, type_constraint, can_return_set);
     else if (p->level < d6() && d6() == 6)
       return make_shared<opcall>(p, type_constraint);
@@ -31,6 +33,18 @@ shared_ptr<value_expr> value_expr::factory(prod *p, sqltype *type_constraint, bo
       return make_shared<atomic_subselect>(p, type_constraint);
     else if (p->level< d6() && d9()==1)
       return make_shared<case_expr>(p, type_constraint);
+    else if (d20() == 1 && p->level < d6())
+      return make_shared<cast_expr>(p, type_constraint);
+    else if (d20() == 1 && p->level < d6())
+      return make_shared<greatest_least>(p, type_constraint);
+    else if (d42() == 1 && type_constraint && (type_constraint->name == "jsonb" || type_constraint->name == "text"))
+      return make_shared<jsonb_access>(p, type_constraint);
+    else if (d42() == 1 && (!type_constraint || type_constraint->name == "text"))
+      return make_shared<substring_expr>(p, type_constraint);
+    else if (d42() == 1 && (!type_constraint || type_constraint == p->scope->schema->inttype))
+      return make_shared<extract_expr>(p, type_constraint);
+    else if (d42() == 1 && (!type_constraint || type_constraint == p->scope->schema->inttype))
+      return make_shared<position_expr>(p, type_constraint);
     else if (p->scope->refs.size() && d20() > 1)
       return make_shared<column_reference>(p, type_constraint);
     else
@@ -53,17 +67,30 @@ case_expr::case_expr(prod *p, sqltype *type_constraint)
 	  concrete one for a better match. */
        if (true_expr->type->consistent(false_expr->type))
 	    true_expr = value_expr::factory(this, false_expr->type, false);
-       else 
+       else
 	    false_expr = value_expr::factory(this, true_expr->type, false);
   }
   type = true_expr->type;
+
+  if (d6() > 4) {
+    int extra = 1 + d6() / 3;
+    for (int i = 0; i < extra; i++) {
+      auto cond = bool_expr::factory(this);
+      auto val = value_expr::factory(this, type, false);
+      extra_when_clauses.push_back({cond, val});
+    }
+  }
 }
 
 void case_expr::out(std::ostream &out)
 {
   out << "case when " << *condition;
   out << " then " << *true_expr;
-  out << " else " << *true_expr;
+  for (auto &wc : extra_when_clauses) {
+    out << " when " << *wc.first;
+    out << " then " << *wc.second;
+  }
+  out << " else " << *false_expr;
   out << " end";
   indent(out);
 }
@@ -74,6 +101,10 @@ void case_expr::accept(prod_visitor *v)
   condition->accept(v);
   true_expr->accept(v);
   false_expr->accept(v);
+  for (auto &wc : extra_when_clauses) {
+    wc.first->accept(v);
+    wc.second->accept(v);
+  }
 }
 
 column_reference::column_reference(prod *p, sqltype *type_constraint) : value_expr(p)
@@ -84,7 +115,8 @@ column_reference::column_reference(prod *p, sqltype *type_constraint) : value_ex
     reference += picked.first->ident()
       + "." + scope->schema->quote_name(picked.second.name);
     type = picked.second.type;
-    assert(type_constraint->consistent(type));
+    if (!type_constraint->consistent(type))
+      fail("type mismatch in column_reference");
   } else {
     named_relation *r = random_pick(scope->refs);
 
@@ -100,23 +132,40 @@ shared_ptr<bool_expr> bool_expr::factory(prod *p)
   try {
        if (p->level > d100())
 	    return make_shared<truth_value>(p);
-       if(d6() < 4)
+       int choice = d100();
+       if (choice <= 25)
 	    return make_shared<comparison_op>(p);
-       else if (d6() < 4)
+       else if (choice <= 40)
 	    return make_shared<bool_term>(p);
-       else if (d6() < 4)
+       else if (choice <= 52)
 	    return make_shared<null_predicate>(p);
-       else if (d6() < 4 && g_joins > 0) {
+       else if (choice <= 58 && g_joins > 0) {
 	    g_joins--;
 	    return make_shared<exists_predicate>(p);
-       } else
+       } else if (choice <= 64)
+	    return make_shared<between_expr>(p);
+       else if (choice <= 70)
+	    return make_shared<like_expr>(p);
+       else if (choice <= 76)
+	    return make_shared<in_expr>(p);
+       else if (choice <= 80)
+	    return make_shared<distinct_pred>(p);
+       else if (choice <= 84)
+	    return make_shared<bool_test>(p);
+       else if (choice <= 88)
+	    return make_shared<not_expr>(p);
+       else if (choice <= 92 && g_joins > 0) {
+	    g_joins--;
+	    return make_shared<any_all_expr>(p);
+       } else if (choice <= 95)
+	    return make_shared<temporal_filter>(p);
+       else
 	    return make_shared<truth_value>(p);
-//     return make_shared<distinct_pred>(q);
   } catch (runtime_error &e) {
   }
   p->retry();
   return factory(p);
-     
+
 }
 
 exists_predicate::exists_predicate(prod *p) : bool_expr(p)
@@ -181,6 +230,11 @@ coalesce::coalesce(prod *p, sqltype *type_constraint, const char *abbrev)
 
   value_exprs.push_back(first_expr);
   value_exprs.push_back(second_expr);
+
+  // Sometimes add more arguments to coalesce
+  while (d6() > 4) {
+    value_exprs.push_back(value_expr::factory(this, type, false));
+  }
 }
  
 void coalesce::out(std::ostream &out)
@@ -421,10 +475,29 @@ funcall::funcall(prod *p, sqltype *type_constraint, bool can_return_set, bool ag
   //  }
   
   for (auto argtype : proc->argtypes) {
-    assert(argtype);
+    if (!argtype)
+      fail("null argtype in funcall");
     auto expr = value_expr::factory(this, argtype, false);
     parms.push_back(expr);
   }
+
+  if (is_aggregate && d6() > 4) {
+    filter = bool_expr::factory(this);
+  }
+
+  if (is_aggregate && d6() > 4 && parms.size() > 0) {
+    agg_order_by.push_back(make_shared<column_reference>(this));
+    while (d6() > 5)
+      agg_order_by.push_back(make_shared<column_reference>(this));
+  }
+}
+
+void funcall::accept(prod_visitor *v) {
+  v->visit(this);
+  for (auto p : parms)
+    p->accept(v);
+  if (filter) filter->accept(v);
+  for (auto &r : agg_order_by) r->accept(v);
 }
 
 void funcall::out(std::ostream &out)
@@ -443,7 +516,20 @@ void funcall::out(std::ostream &out)
 
   if (is_aggregate && (parms.begin() == parms.end()))
     out << "*";
+
+  if (!agg_order_by.empty()) {
+    out << " ORDER BY ";
+    for (auto ref = agg_order_by.begin(); ref != agg_order_by.end(); ref++) {
+      out << **ref;
+      if (ref + 1 != agg_order_by.end()) out << ", ";
+    }
+  }
+
   out << ")";
+
+  if (filter) {
+    out << " FILTER (WHERE " << *filter << ")";
+  }
 }
 
 opcall::opcall(prod *p, sqltype *type_constraint)
@@ -458,6 +544,9 @@ opcall::opcall(prod *p, sqltype *type_constraint)
     oper = random_pick(random_pick(iters)->second);
   }
 
+  if (!oper->right || !oper->result)
+    fail("null operand type in opcall");
+
   if (type_constraint)
     type = type_constraint;
   else
@@ -467,8 +556,6 @@ opcall::opcall(prod *p, sqltype *type_constraint)
   if (oper->left) {
     lhs = value_expr::factory(this, oper->left, false);
   }
-  assert(oper->right);
-  assert(oper->result);
 }
 
 atomic_subselect::atomic_subselect(prod *p, sqltype *type_constraint)
@@ -503,7 +590,8 @@ atomic_subselect::atomic_subselect(prod *p, sqltype *type_constraint)
 	break;
       }
     }
-    assert(col);
+    if (!col)
+      fail("no matching column for atomic_subselect");
   } else {
     tab = &random_pick<>(scope->schema->tables);
     col = &random_pick<>(tab->columns());
@@ -534,7 +622,7 @@ void window_function::out(std::ostream &out)
 {
   indent(out);
   out << *aggregate << " over (partition by ";
-    
+
   for (auto ref = partition_by.begin(); ref != partition_by.end(); ref++) {
     out << **ref;
     if (ref+1 != partition_by.end())
@@ -542,12 +630,15 @@ void window_function::out(std::ostream &out)
   }
 
   out << " order by ";
-    
+
   for (auto ref = order_by.begin(); ref != order_by.end(); ref++) {
     out << **ref;
     if (ref+1 != order_by.end())
       out << ",";
   }
+
+  if (!frame_clause.empty())
+    out << " " << frame_clause;
 
   out << ")";
 }
@@ -567,6 +658,18 @@ window_function::window_function(prod *p, sqltype *type_constraint)
   order_by.push_back(make_shared<column_reference>(this));
   while(d6() > 4)
     order_by.push_back(make_shared<column_reference>(this));
+
+  if (d6() > 4) {
+    static const char *frames[] = {
+      "ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW",
+      "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
+      "ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
+      "ROWS BETWEEN 3 PRECEDING AND CURRENT ROW",
+      "ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING",
+      "RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW",
+    };
+    frame_clause = frames[d6() - 1];
+  }
 }
 
 bool window_function::allowed(prod *p)
@@ -575,7 +678,382 @@ bool window_function::allowed(prod *p)
     return dynamic_cast<query_spec *>(p->pprod) ? true : false;
   if (dynamic_cast<window_function *>(p))
     return false;
+  if (dynamic_cast<dedicated_window_func *>(p))
+    return false;
   if (dynamic_cast<value_expr *>(p))
     return allowed(p->pprod);
   return false;
+}
+
+between_expr::between_expr(prod *p) : bool_expr(p)
+{
+  match();
+  negated = d6() > 4;
+  expr = value_expr::factory(this, nullptr, false);
+  lo = value_expr::factory(this, expr->type, false);
+  hi = value_expr::factory(this, expr->type, false);
+}
+
+void between_expr::out(std::ostream &out)
+{
+  out << "(" << *expr << (negated ? " NOT BETWEEN " : " BETWEEN ")
+      << *lo << " AND " << *hi << ")";
+}
+
+like_expr::like_expr(prod *p) : bool_expr(p)
+{
+  match();
+  is_ilike = d6() > 3;
+  expr = value_expr::factory(this, sqltype::get("text"), false);
+  static const char *patterns[] = {
+    "'%'", "'_%'", "'%_'", "'__'", "'%a%'", "'a%'", "'%a'", "'_a_'"
+  };
+  pattern = patterns[d100() % 8];
+}
+
+void like_expr::out(std::ostream &out)
+{
+  out << "(" << *expr << (is_ilike ? " ILIKE " : " LIKE ") << pattern << ")";
+}
+
+in_expr::in_expr(prod *p) : bool_expr(p)
+{
+  match();
+  negated = d6() > 4;
+  use_subquery = d6() > 4 && g_joins > 0;
+
+  expr = value_expr::factory(this, nullptr, false);
+
+  if (use_subquery) {
+    g_joins--;
+    subquery = make_shared<query_spec>(this, scope);
+  } else {
+    int count = 1 + d6();
+    for (int i = 0; i < count; i++) {
+      value_list.push_back(value_expr::factory(this, expr->type, false));
+    }
+  }
+}
+
+void in_expr::out(std::ostream &out)
+{
+  out << "(" << *expr << (negated ? " NOT IN (" : " IN (");
+  if (use_subquery) {
+    out << *subquery;
+  } else {
+    for (auto it = value_list.begin(); it != value_list.end(); it++) {
+      out << **it;
+      if (it + 1 != value_list.end())
+        out << ", ";
+    }
+  }
+  out << "))";
+}
+
+void in_expr::accept(prod_visitor *v)
+{
+  v->visit(this);
+  expr->accept(v);
+  if (use_subquery)
+    subquery->accept(v);
+  else
+    for (auto &e : value_list) e->accept(v);
+}
+
+cast_expr::cast_expr(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  match();
+  if (type_constraint) {
+    inner = value_expr::factory(this, nullptr, false);
+    target_type = type_constraint->name;
+    type = type_constraint;
+  } else {
+    inner = value_expr::factory(this, nullptr, false);
+    static const char *cast_targets[] = {
+      "integer", "bigint", "text", "boolean", "numeric", "real",
+      "float8", "smallint", "varchar"
+    };
+    target_type = cast_targets[d100() % 9];
+    type = sqltype::get(target_type);
+  }
+}
+
+void cast_expr::out(std::ostream &out)
+{
+  out << "CAST(" << *inner << " AS " << target_type << ")";
+}
+
+temporal_filter::temporal_filter(prod *p) : bool_expr(p)
+{
+  match();
+  col_ref = make_shared<column_reference>(this, sqltype::get("timestamptz"));
+  static const char *intervals[] = {
+    "'1 second'", "'1 minute'", "'1 hour'", "'1 day'", "'1 week'",
+    "'30 seconds'", "'5 minutes'", "'10 minutes'"
+  };
+  interval_str = intervals[d100() % 8];
+}
+
+void temporal_filter::out(std::ostream &out)
+{
+  out << "mz_now() <= " << *col_ref << " + INTERVAL " << interval_str;
+}
+
+dedicated_window_func::dedicated_window_func(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  match();
+  static const char *funcs_no_args[] = {
+    "row_number", "rank", "dense_rank"
+  };
+  static const char *funcs_with_args[] = {
+    "lag", "lead", "first_value", "last_value"
+  };
+
+  if (d6() > 3) {
+    func_name = funcs_no_args[d100() % 3];
+    type = sqltype::get("int8");
+  } else {
+    func_name = funcs_with_args[d100() % 4];
+    auto arg = make_shared<column_reference>(this);
+    args.push_back(arg);
+    type = arg->type;
+
+    if ((func_name == "lag" || func_name == "lead") && d6() > 3) {
+      args.push_back(value_expr::factory(this, scope->schema->inttype, false));
+    }
+  }
+
+  partition_by.push_back(make_shared<column_reference>(this));
+  while (d6() > 4)
+    partition_by.push_back(make_shared<column_reference>(this));
+
+  order_by.push_back(make_shared<column_reference>(this));
+  while (d6() > 4)
+    order_by.push_back(make_shared<column_reference>(this));
+}
+
+bool dedicated_window_func::allowed(prod *p)
+{
+  return window_function::allowed(p);
+}
+
+void dedicated_window_func::out(std::ostream &out)
+{
+  indent(out);
+  out << func_name << "(";
+  for (auto it = args.begin(); it != args.end(); it++) {
+    out << **it;
+    if (it + 1 != args.end()) out << ", ";
+  }
+  out << ") over (partition by ";
+  for (auto ref = partition_by.begin(); ref != partition_by.end(); ref++) {
+    out << **ref;
+    if (ref + 1 != partition_by.end()) out << ", ";
+  }
+  out << " order by ";
+  for (auto ref = order_by.begin(); ref != order_by.end(); ref++) {
+    out << **ref;
+    if (ref + 1 != order_by.end()) out << ", ";
+  }
+  out << ")";
+}
+
+bool_test::bool_test(prod *p) : bool_expr(p)
+{
+  match();
+  expr = value_expr::factory(this, scope->schema->booltype, false);
+  static const char *tests[] = {
+    "IS TRUE", "IS FALSE", "IS UNKNOWN",
+    "IS NOT TRUE", "IS NOT FALSE", "IS NOT UNKNOWN"
+  };
+  test_type = tests[d6() - 1];
+}
+
+void bool_test::out(std::ostream &out)
+{
+  out << "(" << *expr << " " << test_type << ")";
+}
+
+not_expr::not_expr(prod *p) : bool_expr(p)
+{
+  match();
+  inner = bool_expr::factory(this);
+}
+
+any_all_expr::any_all_expr(prod *p) : bool_expr(p)
+{
+  match();
+  lhs = value_expr::factory(this, nullptr, false);
+
+  static const char *cmp_ops[] = { "=", "<>", "<", ">", "<=", ">=" };
+  cmp_op = cmp_ops[d6() - 1];
+
+  quantifier = (d6() > 3) ? "ANY" : "ALL";
+
+  subquery = make_shared<query_spec>(this, scope);
+}
+
+void any_all_expr::out(std::ostream &out)
+{
+  out << "(" << *lhs << " " << cmp_op << " " << quantifier << " (";
+  indent(out);
+  out << *subquery << "))";
+}
+
+void any_all_expr::accept(prod_visitor *v)
+{
+  v->visit(this);
+  lhs->accept(v);
+  subquery->accept(v);
+}
+
+greatest_least::greatest_least(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  match();
+  func_name = (d6() > 3) ? "greatest" : "least";
+  int count = 2 + d6() / 2;
+  auto first = value_expr::factory(this, type_constraint, false);
+  type = first->type;
+  args.push_back(first);
+  for (int i = 1; i < count; i++) {
+    args.push_back(value_expr::factory(this, type, false));
+  }
+}
+
+void greatest_least::out(std::ostream &out)
+{
+  out << func_name << "(";
+  for (auto it = args.begin(); it != args.end(); it++) {
+    out << **it;
+    if (it + 1 != args.end()) out << ", ";
+  }
+  out << ")";
+}
+
+row_constructor::row_constructor(prod *p)
+  : value_expr(p)
+{
+  match();
+  type = sqltype::get("record");
+  int count = 2 + d6() / 2;
+  for (int i = 0; i < count; i++) {
+    elems.push_back(value_expr::factory(this, nullptr, false));
+  }
+}
+
+void row_constructor::out(std::ostream &out)
+{
+  out << "ROW(";
+  for (auto it = elems.begin(); it != elems.end(); it++) {
+    out << **it;
+    if (it + 1 != elems.end()) out << ", ";
+  }
+  out << ")";
+}
+
+array_subscript::array_subscript(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  match();
+  // Generate an array expression and subscript into it
+  string arr_type;
+  if (type_constraint)
+    arr_type = type_constraint->name + "[]";
+  else
+    arr_type = "integer[]";
+
+  arr = value_expr::factory(this, sqltype::get(arr_type), false);
+  index_val = 1 + d6();
+  type = type_constraint ? type_constraint : scope->schema->inttype;
+}
+
+void array_subscript::out(std::ostream &out)
+{
+  out << "(" << *arr << ")[" << index_val << "]";
+}
+
+jsonb_access::jsonb_access(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  match();
+  obj = value_expr::factory(this, sqltype::get("jsonb"), false);
+
+  // ->> returns text, -> returns jsonb
+  returns_text = (type_constraint && type_constraint->name == "text") || d6() > 3;
+
+  if (d6() > 3) {
+    // String key access
+    static const char *keys[] = { "'a'", "'b'", "'key'", "'1'", "'name'", "'value'" };
+    accessor = keys[d6() - 1];
+  } else {
+    // Integer index access
+    accessor = to_string(d6() - 1);
+  }
+
+  type = returns_text ? sqltype::get("text") : sqltype::get("jsonb");
+}
+
+void jsonb_access::out(std::ostream &out)
+{
+  out << "(" << *obj << (returns_text ? " ->> " : " -> ") << accessor << ")";
+}
+
+position_expr::position_expr(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  match();
+  type = scope->schema->inttype;
+  substring_expr = value_expr::factory(this, sqltype::get("text"), false);
+  string_expr = value_expr::factory(this, sqltype::get("text"), false);
+}
+
+void position_expr::out(std::ostream &out)
+{
+  out << "position(" << *substring_expr << " IN " << *string_expr << ")";
+}
+
+substring_expr::substring_expr(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  match();
+  type = sqltype::get("text");
+  string_expr = value_expr::factory(this, sqltype::get("text"), false);
+  from_pos = 1 + d6();
+  for_len = d6();
+}
+
+void substring_expr::out(std::ostream &out)
+{
+  out << "substring(" << *string_expr << " FROM " << from_pos
+      << " FOR " << for_len << ")";
+}
+
+extract_expr::extract_expr(prod *p, sqltype *type_constraint)
+  : value_expr(p)
+{
+  match();
+  type = scope->schema->inttype;
+
+  static const char *ts_fields[] = {
+    "year", "month", "day", "hour", "minute", "second",
+    "epoch", "dow", "doy", "quarter", "week",
+    "millennium", "century", "decade",
+    "microseconds", "milliseconds"
+  };
+  field = ts_fields[d100() % 15];
+
+  // Pick a timestamp/timestamptz/interval/date/time source
+  static const char *source_types[] = {
+    "timestamp", "timestamptz", "interval", "date", "time"
+  };
+  string src_type = source_types[d100() % 5];
+  source = value_expr::factory(this, sqltype::get(src_type), false);
+}
+
+void extract_expr::out(std::ostream &out)
+{
+  out << "extract(" << field << " FROM " << *source << ")";
 }

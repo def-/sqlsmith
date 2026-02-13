@@ -23,23 +23,24 @@ struct case_expr : value_expr {
   shared_ptr<value_expr> condition;
   shared_ptr<value_expr> true_expr;
   shared_ptr<value_expr> false_expr;
+  vector<std::pair<shared_ptr<value_expr>, shared_ptr<value_expr>>> extra_when_clauses;
   case_expr(prod *p, sqltype *type_constraint = 0);
   virtual void out(std::ostream &out);
   virtual void accept(prod_visitor *v);
 };
 
+struct column_reference;
+
 struct funcall : value_expr {
   routine *proc;
   bool is_aggregate;
   vector<shared_ptr<value_expr> > parms;
+  shared_ptr<struct bool_expr> filter;
+  vector<shared_ptr<value_expr> > agg_order_by;
   virtual void out(std::ostream &out);
   virtual ~funcall() { }
   funcall(prod *p, sqltype *type_constraint = 0, bool can_return_set = false, bool agg = false);
-  virtual void accept(prod_visitor *v) {
-    v->visit(this);
-    for (auto p : parms)
-      p->accept(v);
-  }
+  virtual void accept(prod_visitor *v);
 };
 
 struct opcall : value_expr {
@@ -195,6 +196,7 @@ struct window_function : value_expr {
   vector<shared_ptr<column_reference> > partition_by;
   vector<shared_ptr<column_reference> > order_by;
   shared_ptr<funcall> aggregate;
+  string frame_clause;
   static bool allowed(prod *pprod);
   virtual void accept(prod_visitor *v) {
     v->visit(this);
@@ -203,6 +205,208 @@ struct window_function : value_expr {
       p->accept(v);
     for (auto p : order_by)
       p->accept(v);
+  }
+};
+
+struct between_expr : bool_expr {
+  shared_ptr<value_expr> expr;
+  shared_ptr<value_expr> lo;
+  shared_ptr<value_expr> hi;
+  bool negated;
+  between_expr(prod *p);
+  virtual ~between_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    expr->accept(v);
+    lo->accept(v);
+    hi->accept(v);
+  }
+};
+
+struct like_expr : bool_expr {
+  shared_ptr<value_expr> expr;
+  string pattern;
+  bool is_ilike;
+  like_expr(prod *p);
+  virtual ~like_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    expr->accept(v);
+  }
+};
+
+struct in_expr : bool_expr {
+  shared_ptr<value_expr> expr;
+  vector<shared_ptr<value_expr>> value_list;
+  shared_ptr<struct query_spec> subquery;
+  bool negated;
+  bool use_subquery;
+  in_expr(prod *p);
+  virtual ~in_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v);
+};
+
+struct cast_expr : value_expr {
+  shared_ptr<value_expr> inner;
+  string target_type;
+  cast_expr(prod *p, sqltype *type_constraint = 0);
+  virtual ~cast_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    inner->accept(v);
+  }
+};
+
+struct temporal_filter : bool_expr {
+  shared_ptr<column_reference> col_ref;
+  string interval_str;
+  temporal_filter(prod *p);
+  virtual ~temporal_filter() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    col_ref->accept(v);
+  }
+};
+
+struct bool_test : bool_expr {
+  shared_ptr<value_expr> expr;
+  string test_type;
+  bool_test(prod *p);
+  virtual ~bool_test() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    expr->accept(v);
+  }
+};
+
+struct not_expr : bool_expr {
+  shared_ptr<bool_expr> inner;
+  not_expr(prod *p);
+  virtual ~not_expr() { }
+  virtual void out(std::ostream &out) { out << "NOT (" << *inner << ")"; }
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    inner->accept(v);
+  }
+};
+
+struct any_all_expr : bool_expr {
+  shared_ptr<value_expr> lhs;
+  shared_ptr<struct query_spec> subquery;
+  string cmp_op;
+  string quantifier;
+  any_all_expr(prod *p);
+  virtual ~any_all_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v);
+};
+
+struct greatest_least : value_expr {
+  string func_name;
+  vector<shared_ptr<value_expr>> args;
+  greatest_least(prod *p, sqltype *type_constraint = 0);
+  virtual ~greatest_least() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    for (auto &a : args) a->accept(v);
+  }
+};
+
+struct row_constructor : value_expr {
+  vector<shared_ptr<value_expr>> elems;
+  row_constructor(prod *p);
+  virtual ~row_constructor() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    for (auto &e : elems) e->accept(v);
+  }
+};
+
+struct array_subscript : value_expr {
+  shared_ptr<value_expr> arr;
+  int index_val;
+  array_subscript(prod *p, sqltype *type_constraint = 0);
+  virtual ~array_subscript() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    arr->accept(v);
+  }
+};
+
+struct jsonb_access : value_expr {
+  shared_ptr<value_expr> obj;
+  string accessor;
+  bool returns_text;
+  jsonb_access(prod *p, sqltype *type_constraint = 0);
+  virtual ~jsonb_access() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    obj->accept(v);
+  }
+};
+
+struct dedicated_window_func : value_expr {
+  string func_name;
+  vector<shared_ptr<value_expr>> args;
+  vector<shared_ptr<column_reference>> partition_by;
+  vector<shared_ptr<column_reference>> order_by;
+  dedicated_window_func(prod *p, sqltype *type_constraint = 0);
+  virtual ~dedicated_window_func() { }
+  virtual void out(std::ostream &out);
+  static bool allowed(prod *pprod);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    for (auto &a : args) a->accept(v);
+    for (auto &p : partition_by) p->accept(v);
+    for (auto &o : order_by) o->accept(v);
+  }
+};
+
+struct position_expr : value_expr {
+  shared_ptr<value_expr> substring_expr;
+  shared_ptr<value_expr> string_expr;
+  position_expr(prod *p, sqltype *type_constraint = 0);
+  virtual ~position_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    substring_expr->accept(v);
+    string_expr->accept(v);
+  }
+};
+
+struct substring_expr : value_expr {
+  shared_ptr<value_expr> string_expr;
+  int from_pos;
+  int for_len;
+  substring_expr(prod *p, sqltype *type_constraint = 0);
+  virtual ~substring_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    string_expr->accept(v);
+  }
+};
+
+struct extract_expr : value_expr {
+  shared_ptr<value_expr> source;
+  string field;
+  extract_expr(prod *p, sqltype *type_constraint = 0);
+  virtual ~extract_expr() { }
+  virtual void out(std::ostream &out);
+  virtual void accept(prod_visitor *v) {
+    v->visit(this);
+    source->accept(v);
   }
 };
 

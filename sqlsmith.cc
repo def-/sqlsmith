@@ -51,6 +51,8 @@ extern "C" {
 #include <signal.h>
 }
 
+// TODO: Replace _exit() with return again when https://github.com/jtv/libpqxx/issues/1007 is properly fixed
+
 /* make the cerr logger globally accessible so we can emit one last
    report on SIGINT */
 cerr_logger *global_cerr_logger;
@@ -62,7 +64,7 @@ extern "C" void log_handler(int)
     global_cerr_logger->report();
   if (global_json_logger)
     global_json_logger->report();
-  exit(1);
+  _exit(1);
 }
 
 int main(int argc, char *argv[])
@@ -109,9 +111,9 @@ int main(int argc, char *argv[])
       "    --verbose            emit progress output" << endl <<
       "    --version            print version information and exit" << endl <<
       "    --help               print available command line options and exit" << endl;
-    return 0;
+    _exit(0);
   } else if (options.count("version")) {
-    return 0;
+    _exit(0);
   }
 
   try
@@ -122,7 +124,7 @@ int main(int argc, char *argv[])
 	schema = make_shared<schema_sqlite>(options["sqlite"], options.count("exclude-catalog"));
 #else
 	cerr << "Sorry, " PACKAGE_NAME " was compiled without SQLite support." << endl;
-	return 1;
+	_exit(1);
 #endif
       }
       else if(options.count("monetdb")) {
@@ -130,7 +132,7 @@ int main(int argc, char *argv[])
 	schema = make_shared<schema_monetdb>(options["monetdb"]);
 #else
 	cerr << "Sorry, " PACKAGE_NAME " was compiled without MonetDB support." << endl;
-	return 1;
+	_exit(1);
 #endif
       }
       else
@@ -169,7 +171,7 @@ int main(int argc, char *argv[])
       schema = make_shared<schema_pqxx>(options["target"], options.count("exclude-catalog"), options.count("dump-state"), options.count("read-state"));
 
       if (options.count("dump-state")) {
-        return 0;
+        _exit(0);
       }
 
       if (options.count("log-to"))
@@ -202,7 +204,7 @@ int main(int argc, char *argv[])
 
 	  if (queries_generated >= max_queries) {
             std::cout << data.dump() << std::endl;
-            return 0;
+            _exit(0);
           }
 	}
       }
@@ -214,7 +216,7 @@ int main(int argc, char *argv[])
 	dut = make_shared<dut_sqlite>(options["sqlite"]);
 #else
 	cerr << "Sorry, " PACKAGE_NAME " was compiled without SQLite support." << endl;
-	return 1;
+	_exit(1);
 #endif
       }
       else if(options.count("monetdb")) {
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
 	dut = make_shared<dut_monetdb>(options["monetdb"]);
 #else
 	cerr << "Sorry, " PACKAGE_NAME " was compiled without MonetDB support." << endl;
-	return 1;
+	_exit(1);
 #endif
       }
       else
@@ -239,7 +241,7 @@ int main(int argc, char *argv[])
 		global_cerr_logger->report();
 	      if (global_json_logger)
 		global_json_logger->report();
-	      return 0;
+	      _exit(0);
 	    }
 	    
 	    /* Invoke top-level production to generate AST */
@@ -280,6 +282,6 @@ int main(int argc, char *argv[])
     }
   catch (const exception &e) {
     cerr << e.what() << endl;
-    return 1;
+    _exit(1);
   }
 }

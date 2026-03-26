@@ -213,7 +213,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
          "FROM mz_catalog.mz_relations r "
          "JOIN mz_catalog.mz_schemas s ON s.id = r.schema_id "
          "LEFT JOIN mz_catalog.mz_databases d ON d.id = s.database_id "
-         "where r.name not like 'mz_dataflow_operator_reachability%' " // https://github.com/MaterializeInc/materialize/issues/18296
+         "where r.name not like 'mz_dataflow_operator_reachability%' " // https://github.com/MaterializeInc/database-issues/issues/5387
          "and r.name not like '%_raw' " // Can be huge, easy to go OoM
          );
     if (dump_state) {
@@ -270,7 +270,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
                "from pg_attribute join pg_class c on( c.oid = attrelid ) "
                "join pg_namespace n on n.oid = relnamespace "
                "where not attisdropped "
-               "and not (nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema', 'mz_introspection') and atttypid = 18) " // Expected, see https://github.com/MaterializeInc/materialize/issues/17899
+               "and not (nspname in ('mz_catalog', 'pg_catalog', 'mz_internal', 'information_schema', 'mz_introspection') and atttypid = 18) " // Expected, see https://github.com/MaterializeInc/database-issues/issues/5222
                "and attname not in "
                "('xmin', 'xmax', 'ctid', 'cmin', 'cmax', 'tableoid', 'oid') ");
       q += " and relname = " + w.quote(t->name);
@@ -398,7 +398,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "AND mz_functions.name <> 'mz_panic' " // don't want crashes
       "AND mz_functions.name <> 'mz_error_if_null' " // don't want errors with random messages
       "AND mz_functions.name <> 'mz_logical_timestamp' " // mz_logical_timestamp() has been renamed to mz_now()
-      "AND mz_functions.name <> 'mz_sleep' " // https://github.com/MaterializeInc/materialize/issues/17984
+      "AND mz_functions.name <> 'mz_sleep' " // https://github.com/MaterializeInc/database-issues/issues/5256
       "AND mz_functions.name <> 'date_bin' " // binary date_bin is unsupported
       "AND mz_functions.name <> 'list_length_max' " // list_length_max is unsupported
       "AND mz_functions.name <> 'list_n_layers' " // list_n_layers is unsupported
@@ -413,12 +413,13 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "AND mz_functions.name <> 'mz_global_id_to_name' " // common "does not exist" errors
       "AND mz_functions.name <> 'date_bin_hopping' " // the date_bin_hopping function is not supported
       "AND mz_functions.name <> 'generate_series' " // out of memory on large data sets
-      "AND NOT mz_functions.name like '%recv' " // https://github.com/MaterializeInc/materialize/issues/17870
+      "AND NOT mz_functions.name like '%recv' " // https://github.com/MaterializeInc/database-issues/issues/5211
       "AND mz_functions.name <> 'pg_cancel_backend' " // pg_cancel_backend in this position not yet supported
-      "AND (mz_functions.name <> 'sum' OR mz_functions.return_type_id <> (select id from mz_types where name = 'interval'))" // sum(interval) not yet supported, see https://github.com/MaterializeInc/materialize/issues/18043
+      "AND (mz_functions.name <> 'sum' OR mz_functions.return_type_id <> (select id from mz_types where name = 'interval'))" // sum(interval) not yet supported, see https://github.com/MaterializeInc/database-issues/issues/5285
       "AND (mz_functions.name <> 'timezone' OR mz_functions.argument_type_ids[2] <> (select id from mz_types where name = 'time'))" // timezone with time type is intentionally not supported, see https://github.com/MaterializeInc/materialize/pull/22960
       "AND mz_functions.name <> 'pretty_sql' " // Expected a keyword at the beginning of a statement, found ...
       "AND mz_functions.name <> 'map_build' " // map_build(text list) does not exist
+      "AND mz_functions.name <> 'parse_catalog_privileges' " // TODO: Reenable when fixed https://github.com/MaterializeInc/database-issues/issues/11261
       "AND NOT (" + procedure_is_aggregate + " or " + procedure_is_window + ") ");
 
     if (dump_state) {
@@ -455,7 +456,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
           proc.argtypes.push_back(oid2type[obj.get<OID>()]);
       }
     } else {
-      // unnest is broken: https://github.com/MaterializeInc/materialize/issues/17979
+      // unnest is broken, see https://github.com/MaterializeInc/database-issues/issues/5252
       //string q("select (select oid from mz_types where a = id) from mz_functions, lateral unnest(argument_type_ids) as a where oid = ");
       string q("select array_to_string(argument_type_ids, ',') from mz_functions where oid = ");
       q += w.quote(proc.specific_name);
@@ -519,8 +520,8 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "ON mz_functions.return_type_id = ret_type.id "
       "WHERE mz_functions.name not in ('pg_event_trigger_table_rewrite_reason', 'percentile_cont', 'dense_rank', 'cume_dist', 'rank', 'test_rank', 'percent_rank', 'percentile_disc', 'mode', 'test_percentile_disc') "
       "AND mz_functions.name !~ '^ri_fkey_' "
-      "AND NOT (mz_functions.name in ('sum', 'avg', 'avg_internal_v1') AND ret_type.oid = 1186) " // https://github.com/MaterializeInc/materialize/issues/18043
-      "AND mz_functions.name <> 'array_agg' " // https://github.com/MaterializeInc/materialize/issues/18044
+      "AND NOT (mz_functions.name in ('sum', 'avg', 'avg_internal_v1') AND ret_type.oid = 1186) " // https://github.com/MaterializeInc/database-issues/issues/5285
+      "AND mz_functions.name <> 'array_agg' " // https://github.com/MaterializeInc/database-issues/issues/5286
       "AND NOT (mz_functions.name = 'string_agg' AND ret_type.oid = 17) " // string_agg on BYTEA not yet supported
       "AND NOT (mz_functions.name in ('mz_any', 'mz_all')) " // https://github.com/MaterializeInc/database-issues/issues/9298
       "AND " + procedure_is_aggregate + " AND NOT " + procedure_is_window);
@@ -550,7 +551,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
 
   int aggregate_index = 0;
   for (auto &proc : aggregates) {
-    // unnest is broken: https://github.com/MaterializeInc/materialize/issues/17979
+    // unnest is broken, see https://github.com/MaterializeInc/database-issues/issues/5252
     //string q("select (select oid from mz_types where a = id) from mz_functions, lateral unnest(argument_type_ids) as a where oid = ");
     if (read_state) {
       for (const auto &obj : data["aggregates"][aggregate_index]["parameters"]) {

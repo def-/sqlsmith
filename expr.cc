@@ -207,7 +207,7 @@ const_expr::const_expr(prod *p, sqltype *type_constraint)
   // Error: ERROR:  column "default" does not exist
   //else if (dynamic_cast<insert_stmt*>(p) && (d6() > 3))
   //  expr += "default";
-  // https://github.com/MaterializeInc/materialize/issues/17870
+  // https://github.com/MaterializeInc/database-issues/issues/5211
   else if (type->name == "any")
     expr = "null";
   else if (type->name == "anycompatible")
@@ -432,7 +432,7 @@ void funcall::out(std::ostream &out)
   out << proc->ident() << "(";
   for (auto expr = parms.begin(); expr != parms.end(); expr++) {
     indent(out);
-    // https://github.com/MaterializeInc/materialize/issues/17870
+    // https://github.com/MaterializeInc/database-issues/issues/5211
     if ((*expr)->type->name.rfind("list", 0) != 0 && (*expr)->type->name.rfind("map", 0) != 0 && (*expr)->type->name.rfind("record", 0) != 0 && (*expr)->type->name.rfind("any", 0) != 0)
       out << "CAST(" << **expr << " as " << (*expr)->type->name << ")";
     else

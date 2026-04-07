@@ -418,6 +418,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "AND (mz_functions.name <> 'sum' OR mz_functions.return_type_id <> (select id from mz_types where name = 'interval'))" // sum(interval) not yet supported, see https://github.com/MaterializeInc/database-issues/issues/5285
       "AND (mz_functions.name <> 'timezone' OR mz_functions.argument_type_ids[2] <> (select id from mz_types where name = 'time'))" // timezone with time type is intentionally not supported, see https://github.com/MaterializeInc/materialize/pull/22960
       "AND mz_functions.name <> 'pretty_sql' " // Expected a keyword at the beginning of a statement, found ...
+      "AND mz_functions.name <> 'redact_sql' " // Expected a keyword at the beginning of a statement, found ...
       "AND mz_functions.name <> 'map_build' " // map_build(text list) does not exist
       "AND mz_functions.name <> 'parse_catalog_privileges' " // TODO: Reenable when fixed https://github.com/MaterializeInc/database-issues/issues/11261
       "AND NOT (" + procedure_is_aggregate + " or " + procedure_is_window + ") ");

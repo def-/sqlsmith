@@ -413,6 +413,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog, bool dump_state
       "AND mz_functions.name <> 'mz_global_id_to_name' " // common "does not exist" errors
       "AND mz_functions.name <> 'date_bin_hopping' " // the date_bin_hopping function is not supported
       "AND mz_functions.name <> 'generate_series' " // out of memory on large data sets
+      "AND mz_functions.name <> 'generate_series_unoptimized' " // out of memory on large data sets
       "AND NOT mz_functions.name like '%recv' " // https://github.com/MaterializeInc/database-issues/issues/5211
       "AND mz_functions.name <> 'pg_cancel_backend' " // pg_cancel_backend in this position not yet supported
       "AND (mz_functions.name <> 'sum' OR mz_functions.return_type_id <> (select id from mz_types where name = 'interval'))" // sum(interval) not yet supported, see https://github.com/MaterializeInc/database-issues/issues/5285
